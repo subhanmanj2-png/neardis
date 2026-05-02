@@ -1,0 +1,220 @@
+<div class="page-enter" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+  <div class="topbar">
+    <div class="topbar-title">👤 My Profile</div>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="toggleEditProfile()">✏️ Edit Profile</button>
+      <button class="btn btn-ghost btn-sm" onclick="navigate('settings')">⚙️ Settings</button>
+    </div>
+  </div>
+  <div class="scroll">
+    <div style="max-width:680px;margin:0 auto">
+
+      <!-- Not logged in state -->
+      <div id="profile-loggedout" style="display:none;text-align:center;padding:60px 20px">
+        <div style="font-size:60px;margin-bottom:16px">👤</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;margin-bottom:8px">Sign In to View Profile</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:20px">Create an account to save deals, set up route alerts, and track your redemptions.</div>
+        <button class="btn btn-primary" onclick="navigate('settings')">Sign In / Create Account</button>
+      </div>
+
+      <!-- Logged in state -->
+      <div id="profile-loggedin">
+
+        <!-- Header -->
+        <div class="profile-header">
+          <div class="profile-av" id="prof-avatar">?</div>
+          <div style="flex:1">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px" id="prof-name">Your Name</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:3px" id="prof-location">📍 Location not set</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px" id="prof-email">No email</div>
+            <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap" id="prof-tags"></div>
+          </div>
+          <div style="text-align:right">
+            <div class="verified">✓ Verified User</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:3px" id="prof-level">Level 1 Scout</div>
+          </div>
+        </div>
+
+        <!-- Edit form (hidden by default) -->
+        <div id="edit-profile-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:18px">
+          <div style="font-weight:700;margin-bottom:14px">Edit Profile</div>
+          <div class="grid-2" style="gap:12px">
+            <div class="form-group"><label class="form-label">Display Name</label><input class="form-input" type="text" id="ep-name" placeholder="Your name"></div>
+            <div class="form-group"><label class="form-label">Location</label><input class="form-input" type="text" id="ep-loc" placeholder="Your area / city"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Bio</label><textarea class="form-input" id="ep-bio" placeholder="Tell others about your deal-hunting style…" style="min-height:70px"></textarea></div>
+          <div class="form-group">
+            <label class="form-label">Interests (shown as tags)</label>
+            <div class="chips" id="ep-interests">
+              <div class="chip" onclick="this.classList.toggle('active')">🍔 Food</div>
+              <div class="chip" onclick="this.classList.toggle('active')">👗 Fashion</div>
+              <div class="chip" onclick="this.classList.toggle('active')">📱 Tech</div>
+              <div class="chip" onclick="this.classList.toggle('active')">💄 Beauty</div>
+              <div class="chip" onclick="this.classList.toggle('active')">⚽ Sports</div>
+              <div class="chip" onclick="this.classList.toggle('active')">🏠 Home</div>
+            </div>
+          </div>
+          <div class="flex gap-8">
+            <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+            <button class="btn btn-ghost" onclick="toggleEditProfile()">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="profile-stats mb-16">
+          <div class="pstat"><div class="pstat-val" id="ps-redeemed">0</div><div class="pstat-label">Deals Redeemed</div></div>
+          <div class="pstat"><div class="pstat-val" id="ps-saved">0</div><div class="pstat-label">Deals Saved</div></div>
+          <div class="pstat"><div class="pstat-val" id="ps-sightings">0</div><div class="pstat-label">Sightings Posted</div></div>
+        </div>
+
+        <!-- Saved locations -->
+        <div class="sec-head mb-12">📍 Saved Locations</div>
+        <div id="saved-locs" class="mb-16"></div>
+
+        <!-- Notification prefs -->
+        <div class="sec-head mb-12">🔔 Notification Preferences</div>
+        <div id="notif-prefs" class="mb-16"></div>
+
+        <!-- Recently viewed -->
+        <div class="sec-head mb-12">🕐 Recently Viewed</div>
+        <div class="deal-grid" id="recently-viewed"></div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let profileData = JSON.parse(localStorage.getItem('nd-profile-extra') || '{}');
+
+function init_profile() {
+  if (!App.user.loggedIn) {
+    document.getElementById('profile-loggedout').style.display = 'block';
+    document.getElementById('profile-loggedin').style.display = 'none';
+    return;
+  }
+  document.getElementById('profile-loggedout').style.display = 'none';
+  document.getElementById('profile-loggedin').style.display = 'block';
+
+  // Populate header
+  document.getElementById('prof-avatar').textContent = App.user.initials || '?';
+  document.getElementById('prof-name').textContent = App.user.name || 'Your Name';
+  document.getElementById('prof-location').textContent = '📍 ' + (profileData.location || App.user.location || 'Location not set');
+  document.getElementById('prof-email').textContent = App.user.email || '';
+
+  // Tags
+  const tags = profileData.interests || [];
+  const tagEl = document.getElementById('prof-tags');
+  if (tagEl) tagEl.innerHTML = tags.map(t => `<span class="deal-tag tag-${t.toLowerCase()}">${t}</span>`).join('') || '<span style="font-size:11px;color:var(--text3)">No interests set — edit profile</span>';
+
+  // Stats
+  document.getElementById('ps-saved').textContent = App.savedDeals.size;
+  document.getElementById('ps-redeemed').textContent = profileData.redeemed || 0;
+  document.getElementById('ps-sightings').textContent = profileData.sightings || 0;
+
+  // Level
+  const level = App.savedDeals.size > 20 ? 'Level 3 Scout' : App.savedDeals.size > 5 ? 'Level 2 Scout' : 'Level 1 Scout';
+  document.getElementById('prof-level').textContent = level;
+
+  renderSavedLocs();
+  renderNotifPrefs();
+  renderRecentlyViewed();
+}
+
+function toggleEditProfile() {
+  const form = document.getElementById('edit-profile-form');
+  const visible = form.style.display !== 'none';
+  form.style.display = visible ? 'none' : 'block';
+  if (!visible) {
+    document.getElementById('ep-name').value = App.user.name || '';
+    document.getElementById('ep-loc').value = profileData.location || '';
+    document.getElementById('ep-bio').value = profileData.bio || '';
+  }
+}
+
+function saveProfile() {
+  const name = document.getElementById('ep-name').value.trim();
+  if (name) {
+    App.user.name = name;
+    App.user.initials = name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
+  }
+  profileData.location = document.getElementById('ep-loc').value.trim();
+  profileData.bio = document.getElementById('ep-bio').value.trim();
+  profileData.interests = [...document.querySelectorAll('#ep-interests .chip.active')].map(c => c.textContent.trim().split(' ')[1]);
+  localStorage.setItem('nd-profile-extra', JSON.stringify(profileData));
+  App.saveState();
+  document.getElementById('edit-profile-form').style.display = 'none';
+  init_profile();
+}
+
+function renderSavedLocs() {
+  const locs = JSON.parse(localStorage.getItem('nd-locations') || '[]');
+  const defaults = locs.length ? locs : [
+    { n: 'Home', i: '🏠', a: 'Not set', on: true },
+    { n: 'Work', i: '🏢', a: 'Not set', on: false },
+  ];
+  document.getElementById('saved-locs').innerHTML = defaults.map((l, i) => `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:20px">${l.i}</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600">${l.n}</div>
+        <div style="font-size:10px;color:var(--text3)">${l.a}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="editLocation(${i})">Edit</button>
+      <div class="toggle" onclick="this.querySelector('.t-track').classList.toggle('on')">
+        <div class="t-track${l.on?' on':''}"><div class="t-thumb"></div></div>
+      </div>
+    </div>`).join('') + `
+    <button class="btn btn-ghost btn-sm mt-8" onclick="addLocation()" style="margin-top:8px">+ Add Location</button>`;
+}
+
+function addLocation() {
+  const name = prompt('Location name (e.g. Gym, Mall):');
+  const addr = prompt('Address:');
+  if (!name || !addr) return;
+  const locs = JSON.parse(localStorage.getItem('nd-locations') || '[]');
+  locs.push({ n: name, i: '📍', a: addr, on: true });
+  localStorage.setItem('nd-locations', JSON.stringify(locs));
+  renderSavedLocs();
+}
+
+function editLocation(i) {
+  const locs = JSON.parse(localStorage.getItem('nd-locations') || '[]');
+  const addr = prompt('New address:', locs[i]?.a || '');
+  if (addr && locs[i]) { locs[i].a = addr; localStorage.setItem('nd-locations', JSON.stringify(locs)); renderSavedLocs(); }
+}
+
+function renderNotifPrefs() {
+  const prefs = JSON.parse(localStorage.getItem('nd-notif-prefs') || 'null') || [
+    { l: 'Flash deals near me', on: true },
+    { l: 'Saved deals expiring', on: true },
+    { l: 'Deals along my route', on: true },
+    { l: 'Community sightings', on: false },
+    { l: 'Weekly deal digest', on: true },
+  ];
+  document.getElementById('notif-prefs').innerHTML = prefs.map((p, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:13px">${p.l}</span>
+      <div class="toggle" onclick="toggleNotifPref(${i},this)">
+        <div class="t-track${p.on?' on':''}"><div class="t-thumb"></div></div>
+      </div>
+    </div>`).join('');
+  window._notifPrefs = prefs;
+}
+
+function toggleNotifPref(i, el) {
+  window._notifPrefs[i].on = !window._notifPrefs[i].on;
+  el.querySelector('.t-track').classList.toggle('on', window._notifPrefs[i].on);
+  localStorage.setItem('nd-notif-prefs', JSON.stringify(window._notifPrefs));
+}
+
+function renderRecentlyViewed() {
+  const recent = App.viewedDeals.slice(0, 4).map(id => Deals.find(d => d.id === id)).filter(Boolean);
+  const el = document.getElementById('recently-viewed');
+  if (!el) return;
+  if (!recent.length) { el.innerHTML = '<div style="grid-column:1/-1;font-size:12px;color:var(--text3)">No recently viewed deals yet.</div>'; return; }
+  el.innerHTML = recent.map(d => dealCardHTML(d)).join('');
+}
+
+init_profile();
+</script>
