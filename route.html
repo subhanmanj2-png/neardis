@@ -1,0 +1,137 @@
+<div class="page-enter" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+  <div class="topbar">
+    <div class="topbar-title">?? Route Alerts</div>
+    <span style="font-size:11px;color:var(--text2)">Get notified of deals along your commute</span>
+    <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="showAddRoute()">+ Add Route</button>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 300px;flex:1;overflow:hidden" id="route-layout">
+    <!-- LEFT: Routes + Deals -->
+    <div class="scroll" style="padding:18px">
+      <div class="sec-head mb-12">Your Saved Routes</div>
+      <div id="routes-list" class="mb-20"></div>
+
+      <div class="sec-head mb-12">Deals Along Your Active Route</div>
+      <div id="route-deals"></div>
+    </div>
+
+    <!-- RIGHT: Config panel -->
+    <div style="background:var(--bg2);border-left:1px solid var(--border);overflow-y:auto;padding:18px;scrollbar-width:thin">
+      <div class="sec-head mb-12" id="route-panel-title">Configure Route</div>
+      <div id="route-form">
+        <div class="form-group">
+          <label class="form-label">Start Point</label>
+          <input class="form-input" type="text" placeholder="Home / Street address" id="r-start">
+        </div>
+        <div class="form-group">
+          <label class="form-label">End Point</label>
+          <input class="form-input" type="text" placeholder="Office / Destination" id="r-end">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Alert Radius</label>
+          <input type="range" min="100" max="1000" value="400" style="width:100%;accent-color:var(--accent)" oninput="document.getElementById('rad-val').textContent=this.value+'m'">
+          <div style="font-size:11px;color:var(--text2);margin-top:3px" id="rad-val">400m</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Active Hours</label>
+          <div class="grid-2" style="gap:8px">
+            <input class="form-input" type="time" value="07:30">
+            <input class="form-input" type="time" value="09:30">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Deal Categories</label>
+          <div class="chips" style="flex-wrap:wrap">
+            <div class="chip active" onclick="this.classList.toggle('active')">?? Food</div>
+            <div class="chip" onclick="this.classList.toggle('active')">? Coffee</div>
+            <div class="chip active" onclick="this.classList.toggle('active')">?? Grocery</div>
+            <div class="chip" onclick="this.classList.toggle('active')">?? Tech</div>
+            <div class="chip" onclick="this.classList.toggle('active')">?? Fashion</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Minimum Discount</label>
+          <input class="form-input" type="number" placeholder="e.g. 20" min="5" max="99" value="20"> 
+        </div>
+        <button class="btn btn-primary w-full" onclick="saveRoute()">Save Route Alert</button>
+        <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:8px">Alerts sent via push notification</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let savedRoutes = JSON.parse(localStorage.getItem('nd-routes') || '[]');
+
+function init_route() {
+  renderRoutes();
+  renderRouteDeals();
+}
+
+function renderRoutes() {
+  const el = document.getElementById('routes-list');
+  if (!el) return;
+  if (!savedRoutes.length) {
+    el.innerHTML = `<div style="background:var(--surface);border:1px dashed var(--border2);border-radius:var(--r);padding:24px;text-align:center;color:var(--text3)">
+      <div style="font-size:32px;margin-bottom:8px">??</div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px">No routes saved</div>
+      <div style="font-size:11px">Add a route to get deal alerts along your commute</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = savedRoutes.map((r, i) => `
+    <div class="route-card">
+      <div style="font-size:26px">??</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600">${r.from} ? ${r.to}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">Radius: ${r.radius}m · Hours: ${r.startTime}–${r.endTime}</div>
+      </div>
+      <div class="flex gap-6">
+        <div class="live-badge"><div class="live-dot"></div>ACTIVE</div>
+        <button class="btn btn-danger btn-sm" onclick="deleteRoute(${i})">?</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderRouteDeals() {
+  const el = document.getElementById('route-deals');
+  if (!el) return;
+  const along = Deals.filter(d => d.dist <= 1.0).slice(0, 6);
+  if (!along.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--text3)">Add a route to see deals along your commute.</div>';
+    return;
+  }
+  el.innerHTML = `<div class="deal-grid">${along.map(d => dealCardHTML(d)).join('')}</div>`;
+}
+
+function saveRoute() {
+  const from = document.getElementById('r-start').value.trim();
+  const to = document.getElementById('r-end').value.trim();
+  const radius = document.getElementById('rad-val').textContent.replace('m','');
+  if (!from || !to) { alert('Please enter start and end points.'); return; }
+  savedRoutes.push({ from, to, radius, startTime: '07:30', endTime: '09:30' });
+  localStorage.setItem('nd-routes', JSON.stringify(savedRoutes));
+  renderRoutes();
+  document.getElementById('r-start').value = '';
+  document.getElementById('r-end').value = '';
+}
+
+function deleteRoute(i) {
+  savedRoutes.splice(i, 1);
+  localStorage.setItem('nd-routes', JSON.stringify(savedRoutes));
+  renderRoutes();
+}
+
+function showAddRoute() {
+  document.getElementById('r-start').focus();
+}
+
+// Responsive: hide config panel on small screens
+if (window.innerWidth <= 768) {
+  document.getElementById('route-layout').style.gridTemplateColumns = '1fr';
+  const panel = document.querySelector('#route-layout > div:last-child');
+  if (panel) panel.style.display = 'none';
+}
+
+init_route();
+</script>

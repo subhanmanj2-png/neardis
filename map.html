@@ -1,0 +1,167 @@
+<div class="page-enter" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+  <div class="topbar">
+    <div class="topbar-title">?? Deal Map</div>
+    <div class="chips" id="map-cat-chips">
+      <div class="chip active" onclick="setMapCat('all',this)">All</div>
+      <div class="chip" onclick="setMapCat('food',this)">?? Food</div>
+      <div class="chip" onclick="setMapCat('electronics',this)">?? Tech</div>
+      <div class="chip" onclick="setMapCat('fashion',this)">?? Fashion</div>
+      <div class="chip" onclick="setMapCat('beauty',this)">?? Beauty</div>
+    </div>
+    <div class="flex-center gap-8" style="margin-left:auto">
+      <div class="toggle" onclick="toggleMapHeat(this)">
+        <div class="t-track" id="heat-toggle"><div class="t-thumb"></div></div>
+        <span style="font-size:11px;color:var(--text2)">Heatmap</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="map-wrap" style="flex:1;overflow:hidden">
+    <!-- LIST PANEL -->
+    <div class="map-panel">
+      <div style="padding:10px;border-bottom:1px solid var(--border)">
+        <div class="search-bar" style="max-width:none">
+          <span class="search-icon">??</span>
+          <input type="text" placeholder="Search area or shop..." id="map-search" oninput="renderMapList()">
+        </div>
+      </div>
+      <div style="padding:8px 12px;font-size:10px;color:var(--text3);border-bottom:1px solid var(--border)" id="map-count">— deals in view</div>
+      <div class="scroll" style="padding:10px" id="map-list"></div>
+    </div>
+
+    <!-- MAP CANVAS -->
+    <div class="map-canvas">
+      <div id="map-area" style="position:absolute;inset:0">
+        <div class="map-grid"></div>
+
+        <!-- Roads -->
+        <div class="map-road-h" style="top:42%;height:40px"></div>
+        <div class="map-road-h" style="top:19%;height:20px"></div>
+        <div class="map-road-h" style="top:68%;height:22px"></div>
+        <div class="map-road-v" style="left:28%;width:30px"></div>
+        <div class="map-road-v" style="left:63%;width:22px"></div>
+
+        <!-- Buildings -->
+        <div class="map-bldg" style="left:4%;top:4%;width:21%;height:13%"></div>
+        <div class="map-bldg" style="left:28%;top:4%;width:11%;height:13%"></div>
+        <div class="map-bldg" style="left:32%;top:4%;width:27%;height:13%"></div>
+        <div class="map-bldg" style="left:66%;top:4%;width:29%;height:13%"></div>
+        <div class="map-bldg" style="left:4%;top:24%;width:22%;height:15%"></div>
+        <div class="map-bldg" style="left:32%;top:24%;width:27%;height:15%"></div>
+        <div class="map-bldg" style="left:66%;top:24%;width:29%;height:15%"></div>
+        <div class="map-bldg" style="left:4%;top:50%;width:21%;height:16%"></div>
+        <div class="map-bldg" style="left:32%;top:50%;width:27%;height:16%"></div>
+        <div class="map-bldg" style="left:66%;top:50%;width:29%;height:16%"></div>
+        <div class="map-bldg" style="left:4%;top:72%;width:21%;height:20%"></div>
+        <div class="map-bldg" style="left:32%;top:72%;width:62%;height:20%"></div>
+
+        <!-- Pins -->
+        <div id="map-pins"></div>
+
+        <!-- Heatmap blobs (toggle) -->
+        <div id="heat-blobs" style="display:none;pointer-events:none">
+          <div class="heat-blob" style="left:10%;top:22%;width:220px;height:220px;background:radial-gradient(circle,rgba(255,61,107,0.38),transparent 70%)"></div>
+          <div class="heat-blob" style="left:42%;top:10%;width:170px;height:170px;background:radial-gradient(circle,rgba(255,106,77,0.32),transparent 70%)"></div>
+          <div class="heat-blob" style="left:56%;top:46%;width:190px;height:190px;background:radial-gradient(circle,rgba(245,158,11,0.28),transparent 70%)"></div>
+          <div class="heat-blob" style="left:25%;top:58%;width:140px;height:140px;background:radial-gradient(circle,rgba(168,85,247,0.24),transparent 70%)"></div>
+        </div>
+
+        <!-- User location dot -->
+        <div style="position:absolute;left:46%;top:41%;transform:translate(-50%,-50%);z-index:15">
+          <div style="width:16px;height:16px;border-radius:50%;background:var(--blue);border:3px solid #fff;box-shadow:0 0 0 7px rgba(77,143,255,0.18)"></div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="map-ctrl">
+        <div class="map-btn" title="Zoom in">+</div>
+        <div class="map-btn" title="Zoom out">-</div>
+        <div class="map-btn" title="My location" onclick="alert('Locating…')">??</div>
+        <div class="map-btn" title="Toggle heatmap" onclick="toggleMapHeatBtn()">??</div>
+      </div>
+
+      <!-- Legend -->
+      <div class="map-legend">
+        <div class="map-legend-row"><div class="map-dot" style="background:var(--accent)"></div>Active deal</div>
+        <div class="map-legend-row"><div class="map-dot" style="background:var(--amber)"></div>Flash deal</div>
+        <div class="map-legend-row"><div class="map-dot" style="background:var(--blue)"></div>Your location</div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">
+          Low
+          <div style="width:56px;height:5px;border-radius:3px;background:linear-gradient(90deg,rgba(255,61,107,0),rgba(255,61,107,0.85));margin:0 4px"></div>
+          High
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let mapActiveCat = 'all';
+
+function init_map() {
+  renderMapList();
+  renderMapPins();
+}
+
+function setMapCat(cat, el) {
+  mapActiveCat = cat;
+  document.querySelectorAll('#map-cat-chips .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderMapList();
+  renderMapPins();
+}
+
+function getMapDeals() {
+  let list = [...Deals];
+  if (mapActiveCat !== 'all') list = list.filter(d => d.cat === mapActiveCat);
+  const q = (document.getElementById('map-search') || {}).value || '';
+  if (q) list = list.filter(d =>
+    d.shop.toLowerCase().includes(q.toLowerCase()) ||
+    d.title.toLowerCase().includes(q.toLowerCase())
+  );
+  return list;
+}
+
+function renderMapList() {
+  const list = getMapDeals();
+  const cnt = document.getElementById('map-count');
+  if (cnt) cnt.textContent = `${list.length} deals in view · tap pin or list`;
+  const el = document.getElementById('map-list');
+  if (!el) return;
+  if (!list.length) { el.innerHTML = '<div style="font-size:12px;color:var(--text3);text-align:center;padding:20px">No deals match filters</div>'; return; }
+  el.innerHTML = list.map(d => `
+    <div class="mini-card" onclick="openDeal(${d.id})">
+      <div class="mini-emoji">${d.emoji}</div>
+      <div class="mini-info">
+        <div class="mini-shop">${d.shop} · <span class="text-accent mono">-${d.disc}%</span></div>
+        <div class="mini-title">${d.title.substring(0,34)}${d.title.length>34?'…':''}</div>
+        <div class="mini-sub">?? ${fmtDist(d.dist)} · ? <span data-timer="${d.id}">${fmtTime(d.expiry)}</span></div>
+      </div>
+      ${d.flash ? '<div class="live-badge" style="font-size:9px"><div class="live-dot"></div>FLASH</div>' : ''}
+    </div>`).join('');
+}
+
+function renderMapPins() {
+  const list = getMapDeals();
+  const el = document.getElementById('map-pins');
+  if (!el) return;
+  el.innerHTML = list.map(d => `
+    <div class="map-pin" style="left:${d.lng || 50}%;top:${d.lat || 50}%" onclick="openDeal(${d.id})">
+      <div class="pin-box${d.flash ? ' pin-flash' : ''}">${d.emoji} -${d.disc}%</div>
+      <div class="pin-tail"></div>
+    </div>`).join('');
+}
+
+function toggleMapHeat(el) {
+  App.heatmapOn = !App.heatmapOn;
+  document.getElementById('heat-toggle').classList.toggle('on', App.heatmapOn);
+  document.getElementById('heat-blobs').style.display = App.heatmapOn ? 'block' : 'none';
+}
+function toggleMapHeatBtn() {
+  App.heatmapOn = !App.heatmapOn;
+  document.getElementById('heat-toggle').classList.toggle('on', App.heatmapOn);
+  document.getElementById('heat-blobs').style.display = App.heatmapOn ? 'block' : 'none';
+}
+
+init_map();
+</script>

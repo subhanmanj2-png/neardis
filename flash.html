@@ -1,0 +1,75 @@
+<div class="page-enter" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+  <div class="topbar">
+    <div class="topbar-title">? Flash Deals</div>
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    <span style="font-size:12px;color:var(--text2)">Time-sensitive · High-value · Near you</span>
+    <div style="margin-left:auto;font-size:12px;color:var(--text3)" id="flash-count">— active</div>
+  </div>
+  <!-- Urgency bar -->
+  <div style="background:rgba(255,61,107,0.08);border-bottom:1px solid rgba(255,61,107,0.2);padding:8px 18px;display:flex;align-items:center;gap:10px;flex-shrink:0">
+    <span style="font-size:11px;color:var(--accent);font-weight:700">? FLASH DEALS expire quickly — act fast!</span>
+    <span style="font-size:10px;color:var(--text3);margin-left:auto">Sorted by time remaining</span>
+  </div>
+  <div class="scroll" style="padding:18px">
+    <div class="deal-grid" id="flash-grid"></div>
+    <!-- Empty state -->
+    <div id="flash-empty" style="display:none;text-align:center;padding:60px 20px;color:var(--text3)">
+      <div style="font-size:52px;margin-bottom:14px">?</div>
+      <div style="font-size:15px;font-weight:600;margin-bottom:6px">No Flash Deals Right Now</div>
+      <div style="font-size:12px">Flash deals are added throughout the day. Check back soon!</div>
+      <button class="btn btn-ghost" style="margin-top:16px" onclick="navigate('notifications')">?? Set Alert</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function init_flash() {
+  const flash = Deals.filter(d => d.flash).sort((a, b) => a.expiry - b.expiry);
+  const cnt = document.getElementById('flash-count');
+  if (cnt) cnt.textContent = `${flash.length} active`;
+
+  const grid = document.getElementById('flash-grid');
+  const empty = document.getElementById('flash-empty');
+  if (!grid) return;
+
+  if (!flash.length) {
+    grid.style.display = 'none';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  grid.innerHTML = flash.map(d => `
+    <div class="deal-card flash glow" onclick="openDeal(${d.id})">
+      <div class="flash-badge">? FLASH</div>
+      <div class="deal-thumb" style="height:150px;font-size:52px">${d.emoji}
+        <div class="deal-disc" style="font-size:18px">-${d.disc}%</div>
+      </div>
+      <div class="deal-body">
+        <div class="deal-shop">${d.shop} <span class="verified">?</span></div>
+        <div class="deal-title" style="font-size:14px">${d.title}</div>
+        <div class="flex-between mt-8">
+          <div>
+            <div style="font-size:10px;color:var(--text3);text-decoration:line-through">${fmtPrice(d.orig)}</div>
+            <div style="font-size:22px;font-weight:700;color:var(--accent)">${fmtPrice(d.price)}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:600;color:var(--accent)" data-timer="${d.id}">${fmtTime(d.expiry)}</div>
+            <div style="font-size:9px;color:var(--text3)">remaining</div>
+          </div>
+        </div>
+        <div class="deal-meta mt-8">
+          <span class="deal-dist">?? ${fmtDist(d.dist)}</span>
+          <span style="font-size:10px;color:var(--green)">? ${d.worthit}%</span>
+          <span style="font-size:10px;color:var(--text3)">?? ${d.sightings}</span>
+        </div>
+      </div>
+      <div class="deal-footer">
+        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();alert('Opening directions…')">?? Directions</button>
+        <button class="bm-btn${App.savedDeals.has(d.id) ? ' saved' : ''}" onclick="toggleSave(event,${d.id})">??</button>
+      </div>
+    </div>`).join('');
+}
+
+init_flash();
+</script>

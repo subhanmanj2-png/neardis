@@ -1,0 +1,267 @@
+<div class="page-enter" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+  <div class="topbar">
+    <div class="topbar-title">?? Business Dashboard</div>
+    <div class="verified">? Verified Business</div>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+      <div class="live-badge"><div class="live-dot"></div><span id="biz-active-count">0</span> Active</div>
+      <button class="btn btn-primary btn-sm" onclick="setBizTab('deals',document.querySelector('[data-biztab=deals]'))">+ New Deal</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-biztab="overview" onclick="setBizTab('overview',this)">Overview</div>
+    <div class="tab" data-biztab="deals" onclick="setBizTab('deals',this)">My Deals</div>
+    <div class="tab" data-biztab="analytics" onclick="setBizTab('analytics',this)">Analytics</div>
+    <div class="tab" data-biztab="insights" onclick="setBizTab('insights',this)">Competitor Insights</div>
+    <div class="tab" data-biztab="occupancy" onclick="setBizTab('occupancy',this)">Live Occupancy</div>
+  </div>
+  <div class="scroll" style="padding:18px" id="biz-content"></div>
+</div>
+
+<script>
+let bizActiveTab = 'overview';
+let myDeals = JSON.parse(localStorage.getItem('nd-my-deals') || '[]');
+let occupancySettings = JSON.parse(localStorage.getItem('nd-occupancy') || '{"limited":false,"tables":false,"queue":false,"soldout":false}');
+
+function init_business() {
+  const cnt = document.getElementById('biz-active-count');
+  if (cnt) cnt.textContent = myDeals.filter(d => d.active).length;
+  setBizTab(bizActiveTab, document.querySelector(`[data-biztab="${bizActiveTab}"]`));
+}
+
+function setBizTab(tab, el) {
+  bizActiveTab = tab;
+  document.querySelectorAll('[data-biztab]').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const c = document.getElementById('biz-content');
+  if (!c) return;
+
+  if (tab === 'overview') renderBizOverview(c);
+  else if (tab === 'deals') renderBizDeals(c);
+  else if (tab === 'analytics') renderBizAnalytics(c);
+  else if (tab === 'insights') renderBizInsights(c);
+  else if (tab === 'occupancy') renderBizOccupancy(c);
+}
+
+function renderBizOverview(c) {
+  const totalViews = myDeals.reduce((s, d) => s + (d.views || 0), 0);
+  const totalRed = myDeals.reduce((s, d) => s + (d.redemptions || 0), 0);
+  c.innerHTML = `
+    <div class="grid-4 mb-16">
+      <div class="stat-card"><div class="stat-label">Total Views</div><div class="stat-value" style="color:var(--blue)">${totalViews || 0}</div><div class="stat-delta up">? Add deals to see stats</div></div>
+      <div class="stat-card"><div class="stat-label">Redemptions</div><div class="stat-value" style="color:var(--green)">${totalRed || 0}</div><div class="stat-delta" style="color:var(--text3)">From active deals</div></div>
+      <div class="stat-card"><div class="stat-label">Active Deals</div><div class="stat-value" style="color:var(--accent)">${myDeals.filter(d=>d.active).length}</div><div class="stat-delta" style="color:var(--text3)">${myDeals.length} total posted</div></div>
+      <div class="stat-card"><div class="stat-label">Avg Rating</div><div class="stat-value" style="color:var(--amber)">—</div><div class="stat-delta" style="color:var(--text3)">Based on sightings</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="stat-card">
+        <div style="font-weight:600;margin-bottom:4px">Peak Hours (Last 7 Days)</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">When users engage most</div>
+        <div class="bar-chart" id="peak-chart" style="height:90px"></div>
+        <div class="flex mt-8" style="font-size:9px;color:var(--text3)" id="peak-labels"></div>
+      </div>
+      <div class="stat-card">
+        <div style="font-weight:600;margin-bottom:4px">Quick Actions</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Manage your business</div>
+        <button class="btn btn-primary w-full mb-8" onclick="setBizTab('deals',document.querySelector('[data-biztab=deals]'))">+ Post New Deal</button>
+        <button class="btn btn-ghost w-full mb-8" onclick="setBizTab('occupancy',document.querySelector('[data-biztab=occupancy]'))">?? Update Occupancy</button>
+        <button class="btn btn-ghost w-full" onclick="navigate('verify')">? Verify Business</button>
+      </div>
+    </div>`;
+  setTimeout(() => {
+    const vals = [30, 22, 58, 74, 92, 86, 98, 80, 60, 40, 28, 16];
+    const lbls = ['8a','9a','10a','11a','12p','1p','2p','3p','4p','5p','6p','7p'];
+    const mx = Math.max(...vals);
+    const ch = document.getElementById('peak-chart');
+    const lb = document.getElementById('peak-labels');
+    if (ch) ch.innerHTML = vals.map((v,i)=>`<div class="bar${v>=88?' peak':''}" style="height:${v/mx*100}%;flex:1" title="${lbls[i]}: ${v}%"></div>`).join('');
+    if (lb) lb.innerHTML = lbls.map(l=>`<div style="flex:1;text-align:center">${l}</div>`).join('');
+  }, 50);
+}
+
+function renderBizDeals(c) {
+  c.innerHTML = `<div class="grid-2">
+    <div>
+      <div style="font-weight:600;margin-bottom:12px">Your Posted Deals (${myDeals.length})</div>
+      <div id="my-deals-list">
+        ${myDeals.length ? myDeals.map((d, i) => `
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:12px;margin-bottom:10px;display:flex;gap:10px;align-items:center">
+            <div style="font-size:30px">${d.emoji || '??'}</div>
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:13px">${d.title}</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:2px">${d.cat || '—'} · -${d.disc || 0}% · Posted ${d.posted || 'recently'}</div>
+              <div class="flex gap-8 mt-8">
+                <span style="font-size:10px;color:var(--blue)">?? ${d.views || 0} views</span>
+                <span style="font-size:10px;color:var(--green)">? ${d.redemptions || 0} redeemed</span>
+              </div>
+            </div>
+            <div class="flex-center gap-6 flex" style="flex-direction:column;align-items:flex-end;gap:5px">
+              <div class="${d.active ? 'live-badge' : 'chip'}">${d.active ? '<div class="live-dot"></div>LIVE' : 'PAUSED'}</div>
+              <button class="btn btn-danger btn-sm" onclick="removeDeal(${i})">Remove</button>
+            </div>
+          </div>`).join('') : '<div style="background:var(--surface);border:1px dashed var(--border2);border-radius:var(--r);padding:24px;text-align:center;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">??</div><div style="font-size:13px;font-weight:600">No deals posted yet</div><div style="font-size:11px;margin-top:4px">Use the form on the right to post your first deal</div></div>'}
+      </div>
+    </div>
+    <div class="stat-card">
+      <div style="font-weight:700;font-size:14px;margin-bottom:16px">+ Post New Deal</div>
+      <div class="form-group"><label class="form-label">Deal Title</label><input class="form-input" type="text" placeholder="e.g. 40% off all meals" id="nd-title"></div>
+      <div class="grid-2" style="gap:8px">
+        <div class="form-group"><label class="form-label">Discount %</label><input class="form-input" type="number" placeholder="40" min="1" max="99" id="nd-disc"></div>
+        <div class="form-group"><label class="form-label">Original Price</label><input class="form-input" type="number" placeholder="1000" id="nd-orig"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Category</label>
+        <select class="form-input" id="nd-cat">
+          <option value="food">?? Food & Drinks</option>
+          <option value="fashion">?? Fashion</option>
+          <option value="electronics">?? Electronics</option>
+          <option value="beauty">?? Beauty</option>
+          <option value="sports">? Sports</option>
+          <option value="home">?? Home</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Emoji / Icon</label><input class="form-input" type="text" placeholder="??" id="nd-emoji" maxlength="2"></div>
+      <div class="form-group"><label class="form-label">Description</label><textarea class="form-input" placeholder="Describe what makes this deal special..." id="nd-desc"></textarea></div>
+      <div class="form-group">
+        <label class="form-label">Duration</label>
+        <select class="form-input" id="nd-duration">
+          <option value="3600">1 hour</option>
+          <option value="7200">2 hours</option>
+          <option value="14400">4 hours</option>
+          <option value="28800" selected>8 hours</option>
+          <option value="86400">24 hours</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Flash Deal</label>
+        <div class="toggle" onclick="this.querySelector('.t-track').classList.toggle('on')">
+          <div class="t-track" id="nd-flash-track"><div class="t-thumb"></div></div>
+          <span class="toggle-label">Show with flash glow & ticker</span>
+        </div>
+      </div>
+      <button class="btn btn-primary w-full" onclick="postDeal()">Submit for Review</button>
+      <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:7px">Reviewed within 2 hours · Then goes live</div>
+    </div>
+  </div>`;
+}
+
+function postDeal() {
+  const title = document.getElementById('nd-title').value.trim();
+  const disc = parseInt(document.getElementById('nd-disc').value);
+  const orig = parseInt(document.getElementById('nd-orig').value);
+  const cat = document.getElementById('nd-cat').value;
+  const emoji = document.getElementById('nd-emoji').value.trim() || '??';
+  const desc = document.getElementById('nd-desc').value.trim();
+  const duration = parseInt(document.getElementById('nd-duration').value);
+  const flash = document.getElementById('nd-flash-track').classList.contains('on');
+
+  if (!title) { alert('Please enter a deal title.'); return; }
+  if (!disc || disc < 1 || disc > 99) { alert('Enter a valid discount (1–99%).'); return; }
+
+  const deal = {
+    id: Date.now(), title, disc, orig: orig || 0, price: Math.round((orig || 0) * (1 - disc/100)),
+    cat, emoji, desc, expiry: duration, flash, active: false,
+    views: 0, redemptions: 0, sightings: 0, rating: 0, worthit: 0,
+    dist: 0.3, lat: 50, lng: 50, shop: App.user.name || 'My Business',
+    posted: new Date().toLocaleDateString()
+  };
+  myDeals.push(deal);
+  localStorage.setItem('nd-my-deals', JSON.stringify(myDeals));
+  alert('Deal submitted for review! It will go live within 2 hours.');
+  setBizTab('deals', document.querySelector('[data-biztab=deals]'));
+}
+
+function removeDeal(i) {
+  if (!confirm('Remove this deal?')) return;
+  myDeals.splice(i, 1);
+  localStorage.setItem('nd-my-deals', JSON.stringify(myDeals));
+  setBizTab('deals', document.querySelector('[data-biztab=deals]'));
+}
+
+function renderBizAnalytics(c) {
+  c.innerHTML = `<div style="font-weight:600;margin-bottom:14px">Engagement — Last 7 Days</div>
+    <div class="stat-card mb-14">
+      <div class="bar-chart" id="an-chart" style="height:100px"></div>
+      <div class="flex mt-8" style="font-size:9px;color:var(--text3)">
+        ${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<div style="flex:1;text-align:center">${d}</div>`).join('')}
+      </div>
+    </div>
+    <div class="grid-3">
+      <div class="stat-card"><div class="stat-label">Best Day</div><div class="stat-value" style="font-size:20px;color:var(--green)">–</div><div style="font-size:10px;color:var(--text3)">No data yet</div></div>
+      <div class="stat-card"><div class="stat-label">Avg Dwell</div><div class="stat-value" style="font-size:20px;color:var(--blue)">–</div><div style="font-size:10px;color:var(--text3)">Per deal card</div></div>
+      <div class="stat-card"><div class="stat-label">Conversion</div><div class="stat-value" style="font-size:20px;color:var(--amber)">–</div><div style="font-size:10px;color:var(--text3)">Views ? Directions</div></div>
+    </div>
+    <div class="stat-card mt-14" style="margin-top:14px">
+      <div style="font-weight:600;margin-bottom:10px">Post more deals to unlock analytics</div>
+      <div style="font-size:12px;color:var(--text2)">Analytics become available once your deals receive views and redemptions.</div>
+      <button class="btn btn-primary btn-sm mt-8" style="margin-top:10px" onclick="setBizTab('deals',document.querySelector('[data-biztab=deals]'))">Post a Deal</button>
+    </div>`;
+  setTimeout(() => {
+    const vals = [40, 28, 65, 52, 80, 92, 60];
+    const mx = Math.max(...vals);
+    const ch = document.getElementById('an-chart');
+    if (ch) ch.innerHTML = vals.map(v=>`<div class="bar${v>=88?' peak':''}" style="height:${v/mx*100}%;flex:1"></div>`).join('');
+  }, 50);
+}
+
+function renderBizInsights(c) {
+  c.innerHTML = `<div class="grid-2">
+    <div class="stat-card">
+      <div style="font-weight:600;margin-bottom:4px">Neighborhood Trends</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Most searched categories in your area</div>
+      ${[['Food & Drinks',82,'var(--green)'],['Fashion',66,'#ec4899'],['Electronics',54,'var(--blue)'],['Beauty',42,'var(--purple)'],['Sports',30,'var(--amber)']].map(([l,p,cl],i)=>`
+        <div class="flex-center gap-8 mb-8">
+          <span style="font-size:10px;color:var(--text3);width:14px">${i+1}</span>
+          <span style="font-size:11px;width:96px">${l}</span>
+          <div style="flex:1;height:5px;background:var(--sur3);border-radius:3px;overflow:hidden"><div style="width:${p}%;height:100%;background:${cl};border-radius:3px"></div></div>
+          <span style="font-size:11px;color:var(--text3);width:32px;text-align:right">${p}%</span>
+        </div>`).join('')}
+    </div>
+    <div class="stat-card">
+      <div style="font-weight:600;margin-bottom:4px">Competitor Activity</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Anonymized nearby businesses</div>
+      ${[{n:'Nearby Business A',d:4,a:35,live:true},{n:'Nearby Business B',d:2,a:28,live:false},{n:'Nearby Business C',d:7,a:42,live:true}].map(x=>`
+        <div style="padding:10px;background:var(--bg3);border-radius:var(--r2);margin-bottom:8px;display:flex;align-items:center;gap:8px">
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:600">${x.n}</div>
+            <div style="font-size:10px;color:var(--text3)">${x.d} active deals · avg -${x.a}% off</div>
+          </div>
+          <div class="${x.live?'live-badge':'chip'}">${x.live?'<div class="live-dot"></div>ACTIVE':'QUIET'}</div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderBizOccupancy(c) {
+  const opts = [
+    { key:'limited', l:'Limited Stock!', d:'Show "Running out" badge on your deals', i:'??' },
+    { key:'tables',  l:'Tables Available', d:'Display table availability for dine-in', i:'??' },
+    { key:'queue',   l:'Short Queue Now', d:'Signal minimal wait time right now', i:'?' },
+    { key:'soldout', l:'Sold Out', d:'Mark a deal sold out without removing it', i:'??' },
+  ];
+  c.innerHTML = `<div style="max-width:480px">
+    <div style="font-weight:600;margin-bottom:4px">Live Occupancy Signals</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:18px;line-height:1.6">These badges appear on your deal cards in real time, driving foot traffic during slow hours.</div>
+    ${opts.map(o=>`
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:10px">
+        <div style="font-size:24px">${o.i}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600">${o.l}</div>
+          <div style="font-size:10px;color:var(--text3)">${o.d}</div>
+        </div>
+        <div class="toggle" onclick="toggleOccupancy('${o.key}',this)">
+          <div class="t-track${occupancySettings[o.key]?' on':''}"><div class="t-thumb"></div></div>
+        </div>
+      </div>`).join('')}
+    <div style="margin-top:14px;padding:14px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:var(--r2);font-size:12px;color:var(--green)">
+      ?? Shops using Live Occupancy see <strong>2.4×</strong> more foot traffic during off-peak hours.
+    </div>
+  </div>`;
+}
+
+function toggleOccupancy(key, el) {
+  occupancySettings[key] = !occupancySettings[key];
+  el.querySelector('.t-track').classList.toggle('on', occupancySettings[key]);
+  localStorage.setItem('nd-occupancy', JSON.stringify(occupancySettings));
+}
+
+init_business();
+</script>

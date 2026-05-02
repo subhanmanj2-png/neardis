@@ -1,0 +1,172 @@
+<div class="page-enter" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-title">Neardis</div>
+    <div class="search-bar">
+      <span class="search-icon">??</span>
+      <input type="text" placeholder="Search deals near you..." id="feed-search" oninput="init_feed()">
+    </div>
+    <div class="flex gap-6 ml-auto" style="margin-left:auto">
+      <button class="btn btn-ghost btn-sm" onclick="navigate('surprise')">? Surprise Me</button>
+      <button class="btn btn-primary btn-sm" onclick="navigate('business')">+ Post Deal</button>
+    </div>
+    <div class="avatar" onclick="navigate('settings')" id="topbar-avatar">??</div>
+  </div>
+
+  <!-- FILTERS -->
+  <div style="padding:10px 16px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;gap:8px">
+    <div class="chips" id="cat-chips">
+      <div class="chip active" data-cat="all" onclick="setFeedCat('all',this)">?? All Deals</div>
+      <div class="chip" data-cat="food" onclick="setFeedCat('food',this)">?? Food</div>
+      <div class="chip" data-cat="fashion" onclick="setFeedCat('fashion',this)">?? Fashion</div>
+      <div class="chip" data-cat="electronics" onclick="setFeedCat('electronics',this)">?? Electronics</div>
+      <div class="chip" data-cat="beauty" onclick="setFeedCat('beauty',this)">?? Beauty</div>
+      <div class="chip" data-cat="sports" onclick="setFeedCat('sports',this)">? Sports</div>
+      <div class="chip" data-cat="home" onclick="setFeedCat('home',this)">?? Home</div>
+      <div class="chip" id="flash-chip" onclick="toggleFeedFlash(this)">? Flash Only</div>
+    </div>
+    <div class="flex-center gap-8" style="font-size:11px;color:var(--text3)">
+      <span>?? <strong style="color:var(--text)">Nearest & Newest</strong></span>
+      <span>·</span>
+      <span id="feed-deal-count">— deals found</span>
+      <span>·</span>
+      <span>Radius: <strong style="color:var(--text)">2km</strong></span>
+    </div>
+  </div>
+
+  <!-- FEED LAYOUT -->
+  <div style="display:grid;grid-template-columns:1fr 276px;flex:1;overflow:hidden" id="feed-layout-grid">
+
+    <!-- MAIN GRID -->
+    <div class="scroll" id="feed-scroll">
+      <div class="deal-grid" id="deal-grid"></div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div style="background:var(--bg2);border-left:1px solid var(--border);overflow-y:auto;padding:16px;scrollbar-width:thin" id="feed-sidebar">
+
+      <!-- Heatmap -->
+      <div class="sec-head">?? Area Heatmap</div>
+      <div id="heatmap-list" class="mb-16"></div>
+
+      <!-- Sightings -->
+      <div class="sec-head">?? Recent Sightings</div>
+      <div id="feed-sightings" class="mb-16"></div>
+
+      <!-- Expiring -->
+      <div class="sec-head">? Expiring Soon</div>
+      <div id="expiring-list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function init_feed() {
+  renderFeedDeals();
+  renderHeatmap();
+  renderFeedSightings();
+  renderExpiring();
+  // Sync avatar
+  const av = document.getElementById('topbar-avatar');
+  if (av) av.textContent = App.user.loggedIn ? App.user.initials : '??';
+}
+
+function setFeedCat(cat, el) {
+  App.activeCat = cat;
+  document.querySelectorAll('#cat-chips .chip:not(#flash-chip)').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderFeedDeals();
+}
+
+function toggleFeedFlash(el) {
+  App.flashFilter = !App.flashFilter;
+  el.classList.toggle('active', App.flashFilter);
+  renderFeedDeals();
+}
+
+function renderFeedDeals() {
+  let list = [...Deals];
+  if (App.activeCat !== 'all') list = list.filter(d => d.cat === App.activeCat);
+  if (App.flashFilter) list = list.filter(d => d.flash);
+  const q = (document.getElementById('feed-search') || {}).value || '';
+  if (q) list = list.filter(d =>
+    d.title.toLowerCase().includes(q.toLowerCase()) ||
+    d.shop.toLowerCase().includes(q.toLowerCase())
+  );
+  list.sort((a, b) => a.dist - b.dist);
+
+  const count = document.getElementById('feed-deal-count');
+  if (count) count.textContent = `${list.length} deal${list.length !== 1 ? 's' : ''} found`;
+
+  const grid = document.getElementById('deal-grid');
+  if (!grid) return;
+  if (!list.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px 20px;color:var(--text3)">
+      <div style="font-size:40px;margin-bottom:12px">??</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:4px">No deals found</div>
+      <div style="font-size:12px">Try changing filters or expanding radius</div>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = list.map(d => dealCardHTML(d)).join('');
+}
+
+function renderHeatmap() {
+  const el = document.getElementById('heatmap-list');
+  if (!el) return;
+  // Group deals by area (simulated)
+  const areas = [
+    { n: 'High Street', d: 94, c: 'var(--accent)' },
+    { n: 'Main Market', d: 72, c: 'var(--amber)' },
+    { n: 'Food Street', d: 55, c: 'var(--blue)' },
+    { n: 'Mall Zone', d: 38, c: 'var(--purple)' }
+  ];
+  el.innerHTML = areas.map(z => `
+    <div class="mb-8">
+      <div class="flex-between mb-8" style="font-size:11px">
+        <span>${z.n}</span>
+        <span class="text-muted">${z.d} deals/km²</span>
+      </div>
+      <div class="occ-bar"><div class="occ-fill" style="width:${z.d}%;background:${z.c}"></div></div>
+    </div>`).join('');
+}
+
+function renderFeedSightings() {
+  const el = document.getElementById('feed-sightings');
+  if (!el) return;
+  // Show recent sightings; in real app these would come from backend
+  const sightings = [
+    { u: '@user_nearby', t: 'Confirmed — deal is active, short queue!', time: '3m', e: '??' },
+    { u: '@shopaholic22', t: 'Stock running low, grab it fast', time: '11m', e: '??' },
+    { u: '@dealhunter', t: 'Just redeemed, totally worth it!', time: '28m', e: '??' }
+  ];
+  el.innerHTML = sightings.map(s => `
+    <div class="sighting">
+      <div class="sight-av">${s.e}</div>
+      <div>
+        <div class="sight-text"><strong>${s.u}</strong>: ${s.t}</div>
+        <div class="sight-time">${s.time} ago</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderExpiring() {
+  const el = document.getElementById('expiring-list');
+  if (!el) return;
+  const exp = Deals.filter(d => d.expiry > 0 && d.expiry < 7200).sort((a, b) => a.expiry - b.expiry).slice(0, 4);
+  if (!exp.length) { el.innerHTML = '<div style="font-size:11px;color:var(--text3)">No deals expiring soon</div>'; return; }
+  el.innerHTML = exp.map(d => `
+    <div class="mini-card" onclick="openDeal(${d.id})">
+      <div class="mini-emoji">${d.emoji}</div>
+      <div class="mini-info">
+        <div class="mini-shop">${d.shop}</div>
+        <div class="mini-title">${d.title}</div>
+        <div class="mini-sub deal-timer urgent" data-timer="${d.id}">? ${fmtTime(d.expiry)}</div>
+      </div>
+      <div style="font-size:18px;font-weight:700;color:var(--accent)">-${d.disc}%</div>
+    </div>`).join('');
+}
+
+init_feed();
+</script>

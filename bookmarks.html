@@ -1,0 +1,134 @@
+<div class="page-enter" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+  <div class="topbar">
+    <div class="topbar-title">?? Saved Deals</div>
+    <span id="bm-count" style="font-size:12px;color:var(--text2)"></span>
+    <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="if(confirm('Clear all saved deals?')){App.savedDeals.clear();App.saveState();init_bookmarks();}">Clear All</button>
+  </div>
+
+  <div style="display:grid;grid-template-columns:200px 1fr;flex:1;overflow:hidden" id="bm-layout">
+    <!-- Collections sidebar -->
+    <div style="background:var(--bg2);border-right:1px solid var(--border);padding:16px;overflow-y:auto">
+      <div class="sec-head mb-8">Collections</div>
+      <div id="bm-collections"></div>
+      <div class="sec-head mb-8 mt-16">Sort By</div>
+      <div id="bm-sort">
+        <div class="bm-sort-opt active" data-sort="saved" onclick="setBMSort('saved',this)">?? Recently Saved</div>
+        <div class="bm-sort-opt" data-sort="expiry" onclick="setBMSort('expiry',this)">? Expiring Soon</div>
+        <div class="bm-sort-opt" data-sort="dist" onclick="setBMSort('dist',this)">?? Nearest First</div>
+        <div class="bm-sort-opt" data-sort="disc" onclick="setBMSort('disc',this)">?? Best Discount</div>
+      </div>
+    </div>
+
+    <!-- Deal grid -->
+    <div class="scroll" style="padding:18px">
+      <div id="bm-expiring-banner" class="mb-16"></div>
+      <div class="deal-grid" id="bm-grid"></div>
+      <div id="bm-empty" style="display:none;text-align:center;padding:60px 20px;color:var(--text3)">
+        <div style="font-size:52px;margin-bottom:14px">??</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px">No Saved Deals</div>
+        <div style="font-size:12px;margin-bottom:16px">Tap the bookmark icon on any deal to save it here</div>
+        <button class="btn btn-primary" onclick="navigate('feed')">Browse Deals</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.bm-sort-opt {
+  padding: 7px 10px;
+  border-radius: var(--r2);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 4px;
+  transition: all 0.15s;
+}
+.bm-sort-opt:hover { background: var(--sur2); color: var(--text); }
+.bm-sort-opt.active { background: var(--sur3); color: var(--accent); }
+</style>
+
+<script>
+let bmActiveCat = 'all';
+let bmSort = 'saved';
+
+function init_bookmarks() {
+  renderBMCollections();
+  renderBMDeals();
+}
+
+function setBMSort(sort, el) {
+  bmSort = sort;
+  document.querySelectorAll('.bm-sort-opt').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+  renderBMDeals();
+}
+
+function getBookmarked(cat) {
+  let list = [...App.savedDeals].map(id => Deals.find(d => d.id === id)).filter(Boolean);
+  if (cat && cat !== 'all') list = list.filter(d => d.cat === cat);
+  // Sort
+  if (bmSort === 'expiry') list.sort((a, b) => a.expiry - b.expiry);
+  else if (bmSort === 'dist') list.sort((a, b) => a.dist - b.dist);
+  else if (bmSort === 'disc') list.sort((a, b) => b.disc - a.disc);
+  return list;
+}
+
+function renderBMCollections() {
+  const all = getBookmarked();
+  const cnt = document.getElementById('bm-count');
+  if (cnt) cnt.textContent = `${all.length} saved`;
+
+  const cats = [
+    { n: 'All Saved', i: '??', cat: 'all', c: all.length },
+    { n: 'Food', i: '??', cat: 'food', c: all.filter(d => d.cat === 'food').length },
+    { n: 'Fashion', i: '??', cat: 'fashion', c: all.filter(d => d.cat === 'fashion').length },
+    { n: 'Electronics', i: '??', cat: 'electronics', c: all.filter(d => d.cat === 'electronics').length },
+    { n: 'Flash Deals', i: '?', cat: 'flash', c: all.filter(d => d.flash).length },
+  ];
+  document.getElementById('bm-collections').innerHTML = cats.map(c => `
+    <div style="display:flex;align-items:center;gap:7px;padding:8px 10px;border-radius:var(--r2);cursor:pointer;font-size:12px;color:${bmActiveCat===c.cat?'var(--accent)':'var(--text2)'};background:${bmActiveCat===c.cat?'var(--sur3)':'none'};margin-bottom:3px;transition:all 0.15s"
+      onclick="bmActiveCat='${c.cat}';renderBMCollections();renderBMDeals()">
+      ${c.i} ${c.n}
+      <span style="margin-left:auto;font-size:10px;color:var(--text3)">${c.c}</span>
+    </div>`).join('');
+}
+
+function renderBMDeals() {
+  const cat = bmActiveCat === 'flash' ? 'all' : bmActiveCat;
+  let list = getBookmarked(cat);
+  if (bmActiveCat === 'flash') list = list.filter(d => d.flash);
+
+  const grid = document.getElementById('bm-grid');
+  const empty = document.getElementById('bm-empty');
+  if (!grid) return;
+
+  // Expiring soon banner
+  const exp = list.filter(d => d.expiry > 0 && d.expiry < 14400);
+  const banner = document.getElementById('bm-expiring-banner');
+  if (banner && exp.length) {
+    banner.innerHTML = `<div style="background:rgba(255,61,107,0.08);border:1px solid rgba(255,61,107,0.25);border-radius:var(--r);padding:12px 16px">
+      <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:6px">? ${exp.length} saved deal${exp.length>1?'s':''} expiring soon</div>
+      ${exp.map(d=>`<div style="font-size:11px;color:var(--text2);padding:2px 0">${d.emoji} ${d.shop} — <span class="mono" style="color:var(--amber)">${fmtTime(d.expiry)}</span> left</div>`).join('')}
+    </div>`;
+  } else if (banner) banner.innerHTML = '';
+
+  if (!list.length) {
+    grid.style.display = 'none';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  grid.style.display = '';
+  if (empty) empty.style.display = 'none';
+  grid.innerHTML = list.map(d => dealCardHTML(d)).join('');
+}
+
+// Responsive
+if (window.innerWidth <= 768) {
+  const layout = document.getElementById('bm-layout');
+  if (layout) layout.style.gridTemplateColumns = '1fr';
+  const sidebar = layout?.firstElementChild;
+  if (sidebar) sidebar.style.display = 'none';
+}
+
+init_bookmarks();
+</script>

@@ -1,0 +1,156 @@
+<div class="page-enter" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+  <div class="topbar">
+    <div class="topbar-title">? Surprise Me</div>
+    <span style="font-size:12px;color:var(--text2)">One highly-rated deal within 500m</span>
+  </div>
+  <div class="scroll">
+    <div style="max-width:540px;margin:0 auto">
+
+      <!-- Main card -->
+      <div class="surprise-card mb-20">
+        <div style="font-size:64px;margin-bottom:16px;line-height:1" id="surp-emoji">?</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;margin-bottom:8px" id="surp-title">Ready for a discovery?</div>
+        <div style="font-size:13px;color:var(--text2);margin-bottom:22px;line-height:1.6" id="surp-desc">Let us pick the best-rated deal near you right now. No browsing needed.</div>
+
+        <!-- Revealed deal -->
+        <div id="surp-reveal" style="display:none;margin-bottom:20px;background:var(--bg3);border-radius:var(--r);padding:18px;text-align:left"></div>
+
+        <!-- Preferences -->
+        <div style="margin-bottom:18px;text-align:left">
+          <div class="form-label mb-8">Filter by category (optional)</div>
+          <div class="chips" id="surp-cat-chips">
+            <div class="chip active" data-cat="all" onclick="setSurpCat('all',this)">?? Any</div>
+            <div class="chip" data-cat="food" onclick="setSurpCat('food',this)">?? Food</div>
+            <div class="chip" data-cat="fashion" onclick="setSurpCat('fashion',this)">?? Fashion</div>
+            <div class="chip" data-cat="electronics" onclick="setSurpCat('electronics',this)">?? Tech</div>
+            <div class="chip" data-cat="beauty" onclick="setSurpCat('beauty',this)">?? Beauty</div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" style="font-size:15px;padding:13px 32px" onclick="rollSurprise()" id="surp-btn">
+          ? Surprise Me!
+        </button>
+        <div style="font-size:11px;color:var(--text3);margin-top:10px">Picks from <strong style="color:var(--text)">500m</strong> radius · Min rating 4 ?</div>
+      </div>
+
+      <!-- History -->
+      <div class="sec-head mb-12">Recent Surprises</div>
+      <div id="surp-history"></div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+let surpCat = 'all';
+let surpriseHistory = JSON.parse(localStorage.getItem('nd-surp-history') || '[]');
+
+function init_surprise() {
+  renderSurpHistory();
+}
+
+function setSurpCat(cat, el) {
+  surpCat = cat;
+  document.querySelectorAll('#surp-cat-chips .chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function rollSurprise() {
+  let pool = Deals.filter(d => d.dist <= 0.5 && d.rating >= 4);
+  if (surpCat !== 'all') pool = pool.filter(d => d.cat === surpCat);
+
+  const btn = document.getElementById('surp-btn');
+  const reveal = document.getElementById('surp-reveal');
+  const emoji = document.getElementById('surp-emoji');
+  const title = document.getElementById('surp-title');
+  const desc = document.getElementById('surp-desc');
+
+  if (!pool.length) {
+    if (emoji) emoji.textContent = '??';
+    if (title) title.textContent = 'No deals nearby right now';
+    if (desc) desc.textContent = `No deals found within 500m matching your preferences. Try expanding category or check back soon!`;
+    if (reveal) reveal.style.display = 'none';
+    return;
+  }
+
+  // Animate spin
+  if (btn) { btn.textContent = '?? Picking…'; btn.disabled = true; }
+  let frames = 0;
+  const emojis = pool.map(d => d.emoji);
+  const spin = setInterval(() => {
+    if (emoji) emoji.textContent = emojis[frames % emojis.length];
+    frames++;
+    if (frames > 12) {
+      clearInterval(spin);
+      const pick = pool[Math.floor(Math.random() * pool.length)];
+      renderSurprisePick(pick);
+      if (btn) { btn.textContent = '?? Try Again'; btn.disabled = false; }
+    }
+  }, 80);
+}
+
+function renderSurprisePick(d) {
+  const emoji = document.getElementById('surp-emoji');
+  const title = document.getElementById('surp-title');
+  const desc = document.getElementById('surp-desc');
+  const reveal = document.getElementById('surp-reveal');
+
+  if (emoji) emoji.textContent = d.emoji;
+  if (title) title.textContent = d.title;
+  if (desc) desc.textContent = `?? ${fmtDist(d.dist)} away · ? ${d.rating} · ${d.worthit}% say worth it`;
+  if (reveal) {
+    reveal.style.display = 'block';
+    reveal.innerHTML = `
+      <div class="flex-center gap-12 mb-12">
+        <div style="font-size:40px">${d.emoji}</div>
+        <div>
+          <div style="font-weight:700;font-size:15px">${d.shop}</div>
+          <span class="verified">? Verified</span>
+        </div>
+        <div style="margin-left:auto;font-family:'Bebas Neue',sans-serif;font-size:38px;color:var(--accent)">-${d.disc}%</div>
+      </div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6">${d.desc}</div>
+      <div class="grid-2" style="gap:8px;margin-bottom:14px">
+        <div style="background:var(--bg4);border-radius:var(--r2);padding:10px;text-align:center">
+          <div style="font-size:18px;font-weight:700">${fmtPrice(d.price)}</div>
+          <div style="font-size:10px;text-decoration:line-through;color:var(--text3)">${fmtPrice(d.orig)}</div>
+        </div>
+        <div style="background:var(--bg4);border-radius:var(--r2);padding:10px;text-align:center">
+          <div style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--amber)" data-timer="${d.id}">${fmtTime(d.expiry)}</div>
+          <div style="font-size:10px;color:var(--text3)">remaining</div>
+        </div>
+      </div>
+      <div class="flex gap-8">
+        <button class="btn btn-primary btn-sm" onclick="openDeal(${d.id})">View Deal</button>
+        <button class="btn btn-ghost btn-sm" onclick="alert('Opening directions…')">?? Directions</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleSave({stopPropagation:()=>{}},${d.id})">?? Save</button>
+      </div>`;
+  }
+
+  // Save to history
+  surpriseHistory.unshift({ emoji: d.emoji, shop: d.shop, title: d.title, when: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) });
+  surpriseHistory = surpriseHistory.slice(0, 6);
+  localStorage.setItem('nd-surp-history', JSON.stringify(surpriseHistory));
+  renderSurpHistory();
+}
+
+function renderSurpHistory() {
+  const el = document.getElementById('surp-history');
+  if (!el) return;
+  if (!surpriseHistory.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--text3)">Your previous surprises will appear here.</div>';
+    return;
+  }
+  el.innerHTML = surpriseHistory.map(s => `
+    <div class="mini-card">
+      <div class="mini-emoji">${s.emoji}</div>
+      <div class="mini-info">
+        <div class="mini-shop">${s.when}</div>
+        <div class="mini-title">${s.shop}</div>
+        <div class="mini-sub">${s.title}</div>
+      </div>
+    </div>`).join('');
+}
+
+init_surprise();
+</script>

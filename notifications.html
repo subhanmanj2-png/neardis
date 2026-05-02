@@ -1,0 +1,103 @@
+<div class="page-enter" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+  <div class="topbar">
+    <div class="topbar-title">?? Notifications</div>
+    <span id="unread-count" style="font-size:11px;color:var(--text2)"></span>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button>
+      <button class="btn btn-ghost btn-sm" onclick="clearNotifs()">Clear all</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-tab="all" onclick="setNotifTab('all',this)">All</div>
+    <div class="tab" data-tab="deals" onclick="setNotifTab('deals',this)">New Deals</div>
+    <div class="tab" data-tab="expiry" onclick="setNotifTab('expiry',this)">Expiring</div>
+    <div class="tab" data-tab="sightings" onclick="setNotifTab('sightings',this)">Sightings</div>
+    <div class="tab" data-tab="route" onclick="setNotifTab('route',this)">Route Alerts</div>
+  </div>
+  <div class="scroll" style="padding:0" id="notif-list"></div>
+</div>
+
+<script>
+// Notifications stored in localStorage so they persist
+let NOTIFS = JSON.parse(localStorage.getItem('nd-notifs') || 'null') || [
+  {id:1,type:'deals',icon:'?',bg:'rgba(255,61,107,0.14)',title:'Flash Deal Near You',desc:'A new flash deal is live 200m away — check the Flash page!',time:'2 min ago',read:false},
+  {id:2,type:'expiry',icon:'?',bg:'rgba(245,158,11,0.14)',title:'Saved Deal Expiring',desc:'One of your bookmarked deals expires in under 2 hours.',time:'30 min ago',read:false},
+  {id:3,type:'sightings',icon:'??',bg:'rgba(34,197,94,0.14)',title:'Sighting Confirmed',desc:'3 users confirmed a deal near you is still active & in stock.',time:'1 hr ago',read:false},
+  {id:4,type:'deals',icon:'??',bg:'rgba(77,143,255,0.14)',title:'New Deals Posted',desc:'5 new deals were added within 1km of you.',time:'2 hr ago',read:true},
+  {id:5,type:'route',icon:'??',bg:'rgba(168,85,247,0.14)',title:'Route Alert',desc:'A deal matching your route preferences is active along your commute.',time:'3 hr ago',read:true},
+  {id:6,type:'expiry',icon:'?',bg:'rgba(245,158,11,0.14)',title:'Last Chance',desc:'A deal you saved expires in 30 minutes. Head there now!',time:'3.5 hr ago',read:true},
+  {id:7,type:'sightings',icon:'??',bg:'rgba(34,197,94,0.14)',title:'Sighting Update',desc:'2 users confirmed stock is available.',time:'4 hr ago',read:true},
+  {id:8,type:'deals',icon:'??',bg:'rgba(168,85,247,0.14)',title:'Weekend Deals Live',desc:'New weekend deals posted in your area.',time:'Yesterday',read:true},
+];
+let notifTab = 'all';
+
+function saveNotifs() { localStorage.setItem('nd-notifs', JSON.stringify(NOTIFS)); }
+
+function init_notifications() { renderNotifs(); }
+
+function setNotifTab(tab, el) {
+  notifTab = tab;
+  document.querySelectorAll('.tab[data-tab]').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderNotifs();
+}
+
+function renderNotifs() {
+  let list = notifTab === 'all' ? NOTIFS : NOTIFS.filter(n => n.type === notifTab);
+  const unread = NOTIFS.filter(n => !n.read).length;
+  const cnt = document.getElementById('unread-count');
+  if (cnt) cnt.textContent = unread ? `${unread} unread` : 'All read';
+
+  const el = document.getElementById('notif-list');
+  if (!el) return;
+  if (!list.length) {
+    el.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text3)">
+      <div style="font-size:40px;margin-bottom:12px">??</div>
+      <div>No notifications in this category</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = list.map(n => `
+    <div class="notif-item${n.read ? '' : ' unread'}" onclick="markRead(${n.id})">
+      <div class="notif-icon" style="background:${n.bg}">${n.icon}</div>
+      <div style="flex:1">
+        <div class="notif-title">${n.title}</div>
+        <div class="notif-desc">${n.desc}</div>
+        <div class="notif-time">${n.time}</div>
+      </div>
+      ${n.read ? '' : '<div class="unread-dot"></div>'}
+    </div>`).join('');
+}
+
+function markRead(id) {
+  const n = NOTIFS.find(x => x.id === id);
+  if (n) { n.read = true; saveNotifs(); renderNotifs(); }
+}
+
+function markAllRead() {
+  NOTIFS.forEach(n => n.read = true);
+  saveNotifs();
+  renderNotifs();
+}
+
+function clearNotifs() {
+  if (confirm('Clear all notifications?')) {
+    NOTIFS = [];
+    saveNotifs();
+    renderNotifs();
+  }
+}
+
+// Helper: add a notification from anywhere
+window.addNotif = function(title, desc, type = 'deals', icon = '??') {
+  const n = {
+    id: Date.now(), type, icon,
+    bg: 'rgba(255,61,107,0.14)',
+    title, desc, time: 'Just now', read: false
+  };
+  NOTIFS.unshift(n);
+  saveNotifs();
+};
+
+init_notifications();
+</script>
