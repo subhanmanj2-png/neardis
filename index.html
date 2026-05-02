@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neardis — Hyperlocal Deal Discovery</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a26;--bg4:#22223a;
+  --surface:#1e1e2e;--surface2:#252538;--surface3:#2e2e45;
+  --border:#2e2e45;--border2:#3a3a55;
+  --text:#f0f0fa;--text2:#9898b8;--text3:#5a5a7a;
+  --accent:#ff4d6d;--accent2:#ff7a5c;
+  --blue:#4d9fff;--green:#2ecc71;--amber:#f59e0b;--purple:#a855f7;
+  --teal:#14b8a6;--pink:#ec4899;
+  --radius:12px;--radius2:8px;
+}
+body{font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:72px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:4px;flex-shrink:0;z-index:100;overflow-y:auto}
+.sidebar::-webkit-scrollbar{display:none}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:15px;background:linear-gradient(135deg,#ff4d6d,#ff7a5c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px;letter-spacing:-1px;cursor:pointer}
+.nav-btn{width:48px;height:48px;border:none;background:transparent;border-radius:var(--radius2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .2s;color:var(--text3);position:relative;flex-shrink:0}
+.nav-btn:hover{background:var(--surface);color:var(--text)}
+.nav-btn.active{background:var(--surface2);color:var(--accent)}
+.nav-btn .badge{position:absolute;top:6px;right:6px;width:8px;height:8px;background:var(--accent);border-radius:50%;border:2px solid var(--bg2)}
+.nav-sep{width:32px;height:1px;background:var(--border);margin:6px 0;flex-shrink:0}
+.nav-label{font-size:9px;color:var(--text3);text-align:center;letter-spacing:.3px;margin-top:-2px;margin-bottom:4px}
+
+/* MAIN */
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.page{display:none;flex:1;overflow:hidden;flex-direction:column;animation:fadeIn .25s ease}
+.page.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;min-height:52px}
+.topbar-title{font-family:'Syne',sans-serif;font-weight:700;font-size:17px;white-space:nowrap}
+.search-bar{flex:1;max-width:320px;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:7px 14px}
+.search-bar input{background:none;border:none;outline:none;color:var(--text);font-family:inherit;font-size:13px;flex:1;min-width:0}
+.search-bar input::placeholder{color:var(--text3)}
+.btn{padding:7px 14px;border-radius:var(--radius2);border:none;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;transition:all .2s;white-space:nowrap}
+.btn-primary{background:linear-gradient(135deg,#ff4d6d,#ff7a5c);color:#fff}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-ghost{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--surface2)}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn-danger{background:rgba(255,77,109,.15);color:var(--accent);border:1px solid rgba(255,77,109,.3)}
+.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#ff4d6d,#ff7a5c);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;flex-shrink:0;cursor:pointer}
+
+/* SCROLL */
+.scroll{overflow-y:auto;flex:1;padding:16px}
+.scroll::-webkit-scrollbar{width:4px}
+.scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* FLASH TICKER */
+.flash-ticker{background:rgba(255,77,109,.08);border-bottom:1px solid rgba(255,77,109,.2);padding:7px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;overflow:hidden}
+.ticker-label{font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;white-space:nowrap;display:flex;align-items:center;gap:5px}
+.ticker-wrap{flex:1;overflow:hidden;position:relative;height:18px}
+.ticker-inner{display:flex;gap:48px;animation:ticker 25s linear infinite;white-space:nowrap;position:absolute}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ticker-item{font-size:11px;color:var(--text2)}
+.ticker-pct{font-weight:700;color:var(--accent)}
+
+/* CHIPS */
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.chip:hover{border-color:var(--border2);color:var(--text)}
+.chip.active{background:rgba(255,77,109,.12);border-color:var(--accent);color:var(--accent)}
+
+/* DEAL CARDS */
+.deal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.deal-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .2s;position:relative}
+.deal-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.45)}
+.deal-card.flash{border-color:rgba(255,77,109,.6);box-shadow:0 0 0 1px rgba(255,77,109,.3),0 0 20px rgba(255,77,109,.12)}
+.flash-label{position:absolute;top:8px;left:8px;background:var(--accent);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;z-index:2;letter-spacing:.5px}
+.deal-img{width:100%;height:130px;display:flex;align-items:center;justify-content:center;font-size:44px;position:relative;background:var(--bg3)}
+.deal-badge{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.75);color:var(--accent);font-weight:700;font-size:16px;padding:3px 8px;border-radius:5px}
+.deal-body{padding:12px}
+.deal-shop{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;display:flex;align-items:center;gap:4px}
+.deal-title{font-size:13px;font-weight:600;margin-bottom:7px;line-height:1.3}
+.deal-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.deal-tag{font-size:10px;padding:2px 7px;border-radius:3px;font-weight:500}
+.tag-food{background:rgba(46,204,113,.12);color:#2ecc71}
+.tag-fashion{background:rgba(236,72,153,.12);color:#ec4899}
+.tag-electronics{background:rgba(77,159,255,.12);color:#4d9fff}
+.tag-beauty{background:rgba(168,85,247,.12);color:#a855f7}
+.tag-sports{background:rgba(245,158,11,.12);color:#f59e0b}
+.tag-home{background:rgba(20,184,166,.12);color:#14b8a6}
+.deal-dist{font-size:10px;color:var(--text3)}
+.deal-timer{font-size:10px;font-weight:600;color:var(--amber);margin-top:5px}
+.deal-timer.urgent{color:var(--accent);animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.deal-footer{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-top:1px solid var(--border);background:var(--bg3)}
+.worth-it{font-size:11px;color:var(--green)}
+.bm-btn{background:none;border:none;cursor:pointer;font-size:15px;color:var(--text3);transition:all .2s;padding:2px}
+.bm-btn:hover{color:var(--accent);transform:scale(1.2)}
+.bm-btn.saved{color:var(--accent)}
+
+/* SECTION HEAD */
+.sec-head{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:10px}
+
+/* MINI CARD */
+.mini-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:10px;display:flex;gap:8px;cursor:pointer;transition:all .2s;margin-bottom:7px}
+.mini-card:hover{border-color:var(--border2);background:var(--surface2)}
+.mini-emoji{font-size:26px;flex-shrink:0;line-height:1}
+.mini-info{flex:1;min-width:0}
+.mini-shop{font-size:10px;color:var(--text3)}
+.mini-title{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-sub{font-size:10px;color:var(--text2);margin-top:1px}
+
+/* SIGHTING */
+.sighting{display:flex;gap:8px;padding:8px;border-radius:var(--radius2);background:var(--surface);border:1px solid var(--border);margin-bottom:7px}
+.sighting-av{width:28px;height:28px;border-radius:50%;background:var(--surface3);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.sighting-tx{font-size:11px;color:var(--text2);line-height:1.4}
+.sighting-tm{font-size:10px;color:var(--text3);margin-top:1px}
+
+/* STAT CARD */
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.stat-value{font-family:'Syne',sans-serif;font-weight:800;font-size:26px}
+.stat-delta{font-size:10px;margin-top:3px}
+.up{color:var(--green)}.down{color:var(--accent)}
+
+/* BAR CHART */
+.bar-chart{display:flex;align-items:flex-end;gap:5px;height:110px}
+.bar{flex:1;border-radius:3px 3px 0 0;background:rgba(255,77,109,.25);transition:all .3s;cursor:pointer;min-height:4px}
+.bar:hover,.bar.peak{background:var(--accent)}
+.bar-label{font-size:9px;color:var(--text3);text-align:center;margin-top:3px}
+
+/* FORM */
+.form-group{margin-bottom:14px}
+.form-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;display:block}
+.form-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:9px 12px;color:var(--text);font-family:inherit;font-size:13px;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--accent)}
+.form-input::placeholder{color:var(--text3)}
+textarea.form-input{resize:vertical;min-height:80px}
+select.form-input option{background:var(--bg2)}
+
+/* TOGGLE */
+.toggle{display:flex;align-items:center;gap:7px;cursor:pointer}
+.t-track{width:38px;height:20px;border-radius:10px;background:var(--border);position:relative;transition:background .2s;flex-shrink:0}
+.t-track.on{background:var(--accent)}
+.t-thumb{width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:transform .2s}
+.t-track.on .t-thumb{transform:translateX(18px)}
+
+/* OCC BAR */
+.occ-bar{height:5px;border-radius:3px;background:var(--border);overflow:hidden;margin-top:3px}
+.occ-fill{height:100%;border-radius:3px;transition:width .5s}
+
+/* LIVE BADGE */
+.live-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:#fff;background:var(--accent);padding:3px 7px;border-radius:12px;white-space:nowrap}
+.live-dot{width:5px;height:5px;border-radius:50%;background:#fff;animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* VERIFIED */
+.verified{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:var(--blue);font-weight:600}
+
+/* TABS */
+.tabs{display:flex;gap:3px;padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:6px 14px;border-radius:var(--radius2);cursor:pointer;font-size:12px;font-weight:500;color:var(--text2);transition:all .2s;border:1px solid transparent;white-space:nowrap;background:none}
+.tab:hover{color:var(--text);background:var(--surface)}
+.tab.active{background:var(--surface2);color:var(--text);border-color:var(--border)}
+
+/* NOTIF */
+.notif-item{display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .2s}
+.notif-item:hover{background:var(--surface)}
+.notif-item.unread{background:rgba(255,77,109,.04);border-left:3px solid var(--accent)}
+.notif-icon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.notif-title{font-size:12px;font-weight:600;margin-bottom:2px}
+.notif-desc{font-size:11px;color:var(--text2);line-height:1.4}
+.notif-time{font-size:10px;color:var(--text3);margin-top:3px}
+
+/* ROUTE */
+.route-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+
+/* MAP */
+.map-wrap{display:grid;grid-template-columns:300px 1fr;flex:1;overflow:hidden}
+.map-panel{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.map-canvas{position:relative;overflow:hidden;background:var(--bg3)}
+.map-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(46,46,69,.4) 1px,transparent 1px),linear-gradient(90deg,rgba(46,46,69,.4) 1px,transparent 1px);background-size:55px 55px}
+.map-road-h{position:absolute;background:var(--bg4);left:0;right:0}
+.map-road-v{position:absolute;background:var(--bg4);top:0;bottom:0}
+.map-bldg{position:absolute;background:var(--surface);border-radius:2px;border:1px solid var(--border)}
+.map-pin{position:absolute;cursor:pointer;transform:translate(-50%,-100%);z-index:10;transition:transform .15s}
+.map-pin:hover{transform:translate(-50%,-100%) scale(1.15);z-index:20}
+.pin-box{background:var(--accent);color:#fff;font-size:9px;font-weight:700;padding:3px 7px;border-radius:5px 5px 5px 0;white-space:nowrap;box-shadow:0 2px 8px rgba(255,77,109,.4)}
+.pin-flash{animation:pinPulse 1.2s infinite}
+@keyframes pinPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,77,109,.5)}50%{box-shadow:0 0 0 7px rgba(255,77,109,0)}}
+.pin-tail{width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:7px solid var(--accent);margin-left:3px}
+.heat-blob{position:absolute;border-radius:50%;pointer-events:none}
+.map-ctrl{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;gap:6px;z-index:20}
+.map-btn{width:34px;height:34px;background:var(--bg2);border:1px solid var(--border);border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--text);transition:all .2s}
+.map-btn:hover{border-color:var(--accent);color:var(--accent)}
+.map-legend{position:absolute;bottom:12px;left:12px;background:rgba(10,10,15,.85);backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:var(--radius2);padding:8px 12px;font-size:10px;z-index:20}
+.map-legend-row{display:flex;align-items:center;gap:5px;margin-bottom:4px}
+.map-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.heat-legend{display:flex;align-items:center;gap:3px;font-size:10px;color:var(--text3);margin-top:6px;padding-top:5px;border-top:1px solid var(--border)}
+.heat-swatch{width:60px;height:6px;border-radius:3px;background:linear-gradient(90deg,rgba(255,77,109,0),rgba(255,77,109,.9));margin:0 3px}
+
+/* STEP PROGRESS */
+.step-progress{display:flex;gap:6px;margin-bottom:20px}
+.step-dot{flex:1;height:3px;border-radius:2px;background:var(--border)}
+.step-dot.done{background:var(--green)}
+.step-dot.current{background:var(--accent)}
+
+/* PROFILE */
+.profile-header{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;display:flex;align-items:center;gap:16px}
+.profile-av{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#ff4d6d,#ff7a5c);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:26px;color:#fff;flex-shrink:0}
+.profile-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.pstat{text-align:center;padding:10px;background:var(--surface);border-radius:var(--radius2);border:1px solid var(--border)}
+.pstat-val{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;color:var(--accent)}
+.pstat-label{font-size:10px;color:var(--text3);margin-top:2px}
+
+/* SURPRISE */
+.surprise-card{background:var(--surface);border:2px solid var(--accent);border-radius:var(--radius);padding:28px;text-align:center;position:relative;overflow:hidden}
+.surprise-card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(255,77,109,.08),transparent 60%);pointer-events:none}
+
+/* FLASH PAGE GRID */
+.flash-card{background:var(--surface);border:2px solid rgba(255,77,109,.5);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .2s;box-shadow:0 0 20px rgba(255,77,109,.1)}
+.flash-card:hover{transform:translateY(-3px);box-shadow:0 8px 32px rgba(255,77,109,.2)}
+
+/* INSIGHT BAR */
+.ins-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.ins-bar-wrap{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.ins-bar{height:100%;border-radius:3px}
+
+/* DEAL DETAIL MODAL */
+#deal-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;overflow-y:auto;padding:32px 16px}
+.modal-box{max-width:860px;margin:0 auto;background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.modal-body{display:grid;grid-template-columns:1fr 320px}
+@media(max-width:700px){.modal-body{grid-template-columns:1fr}.modal-side{display:none}}
+.modal-main{padding:20px}
+.modal-side{border-left:1px solid var(--border);padding:18px;background:var(--surface)}
+.big-disc{font-family:'Syne',sans-serif;font-size:52px;font-weight:800;background:linear-gradient(135deg,#ff4d6d,#ff7a5c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
+.big-cd{font-family:'Syne',sans-serif;font-size:38px;font-weight:800;color:var(--accent);letter-spacing:-2px}
+
+/* FLASH GLOW ANIMATION */
+@keyframes glowPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,77,109,.4)}50%{box-shadow:0 0 24px 4px rgba(255,77,109,.2)}}
+.glow{animation:glowPulse 2s infinite}
+
+/* UPLOAD ZONE */
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius2);padding:20px;text-align:center;cursor:pointer;transition:border-color .2s}
+.upload-zone:hover{border-color:var(--accent)}
+
+/* RESPONSIVE GRIDS */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:1fr 1fr}}
+
+/* FEED LAYOUT */
+.feed-layout{display:grid;grid-template-columns:1fr 280px;flex:1;overflow:hidden}
+.feed-main{overflow-y:auto;padding:16px}
+.feed-main::-webkit-scrollbar{width:4px}
+.feed-main::-webkit-scrollbar-thumb{background:var(--border2)}
+.feed-side{background:var(--bg2);border-left:1px solid var(--border);overflow-y:auto;padding:14px}
+.feed-side::-webkit-scrollbar{width:4px}
+.feed-side::-webkit-scrollbar-thumb{background:var(--border2)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ===== SIDEBAR ===== -->
+<div class="sidebar">
+  <div class="logo" onclick="showPage('feed')">N</div>
+  <button class="nav-btn active" onclick="showPage('feed')" title="Feed">??</button>
+  <div class="nav-label">Feed</div>
+  <button class="nav-btn" onclick="showPage('map')" title="Map">???</button>
+  <div class="nav-label">Map</div>
+  <button class="nav-btn" onclick="showPage('flash')" title="Flash">?</button>
+  <div class="nav-label">Flash</div>
+  <button class="nav-btn" onclick="showPage('route')" title="Route">???</button>
+  <div class="nav-label">Route</div>
+  <div class="nav-sep"></div>
+  <button class="nav-btn" onclick="showPage('bookmarks')" title="Saved">??</button>
+  <div class="nav-label">Saved</div>
+  <button class="nav-btn" onclick="showPage('notifications')" title="Alerts"><div class="badge"></div>??</button>
+  <div class="nav-label">Alerts</div>
+  <button class="nav-btn" onclick="showPage('surprise')" title="Surprise">??</button>
+  <div class="nav-label">Surprise</div>
+  <div class="nav-sep"></div>
+  <button class="nav-btn" onclick="showPage('business')" title="Business">??</button>
+  <div class="nav-label">Biz</div>
+  <button class="nav-btn" onclick="showPage('verify')" title="Verify">?</button>
+  <div class="nav-label">Verify</div>
+  <div class="nav-sep"></div>
+  <button class="nav-btn" onclick="showPage('profile')" title="Profile">??</button>
+  <div class="nav-label">Profile</div>
+</div>
+
+<!-- ===== MAIN ===== -->
+<div class="main">
+
+<!-- FLASH TICKER -->
+<div class="flash-ticker">
+  <div class="ticker-label">? FLASH</div>
+  <div class="ticker-wrap"><div class="ticker-inner" id="ticker"></div></div>
+</div>
+
+<!-- ==================== PAGE: FEED ==================== -->
+<div class="page active" id="page-feed">
+  <div class="topbar">
+    <div class="topbar-title">?? Neardis</div>
+    <div class="search-bar">
+      <span style="color:var(--text3);font-size:13px">??</span>
+      <input type="text" placeholder="Search deals near you..." id="search-input" oninput="renderDeals()">
+    </div>
+    <div style="display:flex;gap:6px;margin-left:auto">
+      <button class="btn btn-ghost btn-sm" onclick="triggerSurprise()">?? Surprise Me</button>
+      <button class="btn btn-primary btn-sm" onclick="showPage('business')">+ Post Deal</button>
+    </div>
+    <div class="avatar" onclick="showPage('profile')">AK</div>
+  </div>
+  <div style="padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;gap:8px">
+    <div class="chips" id="cat-chips">
+      <div class="chip active" onclick="setCat('all',this)">?? All Deals</div>
+      <div class="chip" onclick="setCat('food',this)">?? Food</div>
+      <div class="chip" onclick="setCat('fashion',this)">?? Fashion</div>
+      <div class="chip" onclick="setCat('electronics',this)">?? Electronics</div>
+      <div class="chip" onclick="setCat('beauty',this)">?? Beauty</div>
+      <div class="chip" onclick="setCat('sports',this)">?? Sports</div>
+      <div class="chip" onclick="setCat('home',this)">?? Home</div>
+      <div class="chip active" id="flash-chip" onclick="toggleFF(this)" style="border-color:var(--accent);color:var(--accent)">? Flash Only</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;font-size:11px;color:var(--text3)">
+      <span>?? <strong style="color:var(--text)">Nearest & Newest</strong></span>
+      <span>·</span><span id="deal-count">Loading...</span>
+      <span>·</span><span>Radius: <strong style="color:var(--text)">2km</strong></span>
+    </div>
+  </div>
+  <div class="feed-layout">
+    <div class="feed-main">
+      <div class="deal-grid" id="deal-grid"></div>
+    </div>
+    <div class="feed-side">
+      <div class="sec-head">?? Area Heatmap</div>
+      <div id="heatmap-list" style="margin-bottom:14px"></div>
+      <div class="sec-head">??? Recent Sightings</div>
+      <div id="feed-sightings" style="margin-bottom:14px"></div>
+      <div class="sec-head">? Expiring Soon</div>
+      <div id="expiring-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: MAP ==================== -->
+<div class="page" id="page-map">
+  <div class="topbar">
+    <div class="topbar-title">??? Deal Map</div>
+    <div class="chips">
+      <div class="chip active">All</div>
+      <div class="chip">?? Food</div>
+      <div class="chip">?? Tech</div>
+      <div class="chip">?? Fashion</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+      <div class="toggle" onclick="toggleHeat(this)">
+        <div class="t-track" id="heat-toggle"><div class="t-thumb"></div></div>
+        <span style="font-size:11px;color:var(--text2)">Heatmap</span>
+      </div>
+    </div>
+  </div>
+  <div class="map-wrap">
+    <div class="map-panel">
+      <div style="padding:10px;border-bottom:1px solid var(--border)">
+        <div class="search-bar" style="max-width:none">
+          <span style="color:var(--text3);font-size:13px">??</span>
+          <input type="text" placeholder="Search area or shop..." style="background:none;border:none;outline:none;color:var(--text);font-family:inherit;font-size:12px;flex:1">
+        </div>
+      </div>
+      <div style="padding:8px 10px;font-size:10px;color:var(--text3);border-bottom:1px solid var(--border)">12 deals in view · Tap a pin or list item</div>
+      <div class="scroll" style="padding:10px" id="map-list"></div>
+    </div>
+    <div class="map-canvas">
+      <div id="map-area" style="position:absolute;inset:0">
+        <div class="map-grid"></div>
+        <!-- Roads -->
+        <div class="map-road-h" style="top:44%;height:38px"></div>
+        <div class="map-road-h" style="top:20%;height:18px"></div>
+        <div class="map-road-v" style="left:29%;width:28px"></div>
+        <div class="map-road-v" style="left:64%;width:20px"></div>
+        <!-- Buildings -->
+        <div class="map-bldg" style="left:4%;top:4%;width:20%;height:13%"></div>
+        <div class="map-bldg" style="left:27%;top:4%;width:10%;height:13%"></div>
+        <div class="map-bldg" style="left:35%;top:4%;width:24%;height:13%"></div>
+        <div class="map-bldg" style="left:67%;top:4%;width:28%;height:13%"></div>
+        <div class="map-bldg" style="left:4%;top:25%;width:22%;height:14%"></div>
+        <div class="map-bldg" style="left:35%;top:25%;width:24%;height:14%"></div>
+        <div class="map-bldg" style="left:67%;top:25%;width:28%;height:14%"></div>
+        <div class="map-bldg" style="left:4%;top:52%;width:20%;height:22%"></div>
+        <div class="map-bldg" style="left:35%;top:52%;width:24%;height:22%"></div>
+        <div class="map-bldg" style="left:67%;top:52%;width:28%;height:22%"></div>
+        <div class="map-bldg" style="left:4%;top:80%;width:90%;height:14%"></div>
+        <!-- Pins -->
+        <div id="map-pins"></div>
+        <!-- Heat blobs (hidden by default) -->
+        <div id="heat-blobs" style="display:none">
+          <div class="heat-blob" style="left:15%;top:28%;width:200px;height:200px;background:radial-gradient(circle,rgba(255,77,109,.4),transparent 70%)"></div>
+          <div class="heat-blob" style="left:44%;top:12%;width:160px;height:160px;background:radial-gradient(circle,rgba(255,122,92,.35),transparent 70%)"></div>
+          <div class="heat-blob" style="left:58%;top:48%;width:180px;height:180px;background:radial-gradient(circle,rgba(245,158,11,.3),transparent 70%)"></div>
+          <div class="heat-blob" style="left:28%;top:60%;width:130px;height:130px;background:radial-gradient(circle,rgba(168,85,247,.25),transparent 70%)"></div>
+        </div>
+        <!-- User dot -->
+        <div style="position:absolute;left:47%;top:42%;transform:translate(-50%,-50%);z-index:15">
+          <div style="width:16px;height:16px;border-radius:50%;background:var(--blue);border:3px solid #fff;box-shadow:0 0 0 6px rgba(77,159,255,.18)"></div>
+        </div>
+      </div>
+      <div class="map-ctrl">
+        <div class="map-btn" onclick="this.textContent='??'">+</div>
+        <div class="map-btn">-</div>
+        <div class="map-btn">?</div>
+        <div class="map-btn" onclick="toggleHeatBtn()">??</div>
+      </div>
+      <div class="map-legend">
+        <div class="map-legend-row"><div class="map-dot" style="background:var(--accent)"></div><span>Active deal</span></div>
+        <div class="map-legend-row"><div class="map-dot" style="background:var(--amber)"></div><span>Flash deal</span></div>
+        <div class="map-legend-row"><div class="map-dot" style="background:var(--blue)"></div><span>Your location</span></div>
+        <div class="heat-legend">Low<div class="heat-swatch"></div>High density</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: FLASH DEALS ==================== -->
+<div class="page" id="page-flash">
+  <div class="topbar">
+    <div class="topbar-title">? Flash Deals</div>
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    <span style="font-size:12px;color:var(--text2)">Time-sensitive high-value deals near you</span>
+  </div>
+  <div class="scroll">
+    <div class="deal-grid" id="flash-grid"></div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: ROUTE ALERTS ==================== -->
+<div class="page" id="page-route">
+  <div class="topbar">
+    <div class="topbar-title">??? Route Alerts</div>
+    <button class="btn btn-primary btn-sm" style="margin-left:auto">+ Add Route</button>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 300px;flex:1;overflow:hidden">
+    <div class="scroll" style="padding:16px">
+      <div class="sec-head" style="margin-bottom:10px">Your Saved Routes</div>
+      <div id="routes-list" style="margin-bottom:20px"></div>
+      <div class="sec-head" style="margin-bottom:10px">Deals Along Your Morning Commute</div>
+      <div class="deal-grid" id="route-deals"></div>
+    </div>
+    <div style="background:var(--bg2);border-left:1px solid var(--border);overflow-y:auto;padding:14px">
+      <div class="sec-head" style="margin-bottom:12px">Configure Route</div>
+      <div class="form-group"><label class="form-label">Start Point</label><input class="form-input" type="text" value="Gulberg III"></div>
+      <div class="form-group"><label class="form-label">End Point</label><input class="form-input" type="text" value="Liberty Market"></div>
+      <div class="form-group">
+        <label class="form-label">Alert Radius</label>
+        <input type="range" min="100" max="1000" value="400" style="width:100%;accent-color:var(--accent)" oninput="document.getElementById('rad-val').textContent=this.value+'m'">
+        <div style="font-size:11px;color:var(--text2);margin-top:3px" id="rad-val">400m</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Active Hours</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <input class="form-input" type="time" value="07:30">
+          <input class="form-input" type="time" value="09:30">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Categories</label>
+        <div class="chips">
+          <div class="chip active">?? Food</div>
+          <div class="chip">? Coffee</div>
+          <div class="chip">?? Grocery</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px">Save Route Alert</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: BOOKMARKS ==================== -->
+<div class="page" id="page-bookmarks">
+  <div class="topbar">
+    <div class="topbar-title">?? Saved Deals</div>
+    <span style="font-size:12px;color:var(--text2)" id="bm-count"></span>
+  </div>
+  <div style="display:grid;grid-template-columns:180px 1fr;flex:1;overflow:hidden">
+    <div style="background:var(--bg2);border-right:1px solid var(--border);padding:14px;overflow-y:auto">
+      <div class="sec-head">Collections</div>
+      <div id="bm-collections"></div>
+    </div>
+    <div class="scroll" style="padding:16px">
+      <div id="bm-expiring" style="margin-bottom:16px"></div>
+      <div class="deal-grid" id="bm-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: NOTIFICATIONS ==================== -->
+<div class="page" id="page-notifications">
+  <div class="topbar">
+    <div class="topbar-title">?? Notifications</div>
+    <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="markAllRead()">Mark all read</button>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="setNotifTab('all',this)">All</div>
+    <div class="tab" onclick="setNotifTab('deals',this)">New Deals</div>
+    <div class="tab" onclick="setNotifTab('expiry',this)">Expiring</div>
+    <div class="tab" onclick="setNotifTab('sightings',this)">Sightings</div>
+    <div class="tab" onclick="setNotifTab('route',this)">Route Alerts</div>
+  </div>
+  <div class="scroll" style="padding:0" id="notif-list"></div>
+</div>
+
+<!-- ==================== PAGE: SURPRISE ME ==================== -->
+<div class="page" id="page-surprise">
+  <div class="topbar">
+    <div class="topbar-title">?? Surprise Me</div>
+    <span style="font-size:12px;color:var(--text2)">One highly-rated deal within 500m</span>
+  </div>
+  <div class="scroll" style="padding:20px;max-width:560px;margin:0 auto">
+    <div class="surprise-card">
+      <div style="font-size:60px;margin-bottom:14px" id="surp-emoji">??</div>
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:6px" id="surp-title">Ready for a discovery?</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:20px" id="surp-desc">Let us pick the highest-rated deal near you right now.</div>
+      <div id="surp-info" style="display:none;margin-bottom:18px;background:var(--bg3);border-radius:var(--radius2);padding:14px;text-align:left"></div>
+      <button class="btn btn-primary" style="font-size:15px;padding:12px 28px" onclick="rollSurprise()">?? Surprise Me!</button>
+      <div style="font-size:11px;color:var(--text3);margin-top:10px">Picks from <strong style="color:var(--text)">500m</strong> radius · Min rating 4?</div>
+    </div>
+    <div style="margin-top:18px">
+      <div class="sec-head">Recent Surprises</div>
+      <div id="surp-history"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: BUSINESS DASHBOARD ==================== -->
+<div class="page" id="page-business">
+  <div class="topbar">
+    <div class="topbar-title">?? Business Dashboard</div>
+    <div class="verified" style="font-size:11px">? Verified Business</div>
+    <div style="margin-left:auto;display:flex;gap:7px;align-items:center">
+      <div class="live-badge"><div class="live-dot"></div>3 Active</div>
+      <button class="btn btn-primary btn-sm" onclick="setBizTab('deals',document.querySelectorAll('.biz-tab')[1])">+ New Deal</button>
+    </div>
+  </div>
+  <div class="tabs" id="biz-tabs">
+    <div class="tab biz-tab active" onclick="setBizTab('overview',this)">Overview</div>
+    <div class="tab biz-tab" onclick="setBizTab('deals',this)">My Deals</div>
+    <div class="tab biz-tab" onclick="setBizTab('analytics',this)">Analytics</div>
+    <div class="tab biz-tab" onclick="setBizTab('insights',this)">Competitor Insights</div>
+    <div class="tab biz-tab" onclick="setBizTab('occupancy',this)">Live Occupancy</div>
+  </div>
+  <div class="scroll" style="padding:16px" id="biz-content"></div>
+</div>
+
+<!-- ==================== PAGE: VERIFY SHOP ==================== -->
+<div class="page" id="page-verify">
+  <div class="topbar">
+    <div class="topbar-title">? Shop Verification</div>
+  </div>
+  <div class="scroll" style="padding:20px;max-width:580px;margin:0 auto">
+    <div style="margin-bottom:20px">
+      <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:6px">Get Verified on Neardis</div>
+      <div style="font-size:13px;color:var(--text2);line-height:1.6">Verified businesses get a trust badge, appear first in search, and can post unlimited deals. The process takes 2–3 business days.</div>
+    </div>
+    <div class="step-progress" id="verify-steps"></div>
+    <div id="verify-content"></div>
+  </div>
+</div>
+
+<!-- ==================== PAGE: PROFILE ==================== -->
+<div class="page" id="page-profile">
+  <div class="topbar">
+    <div class="topbar-title">?? My Profile</div>
+    <button class="btn btn-ghost btn-sm" style="margin-left:auto">Edit Profile</button>
+  </div>
+  <div class="scroll" style="padding:16px;max-width:680px;margin:0 auto">
+    <div class="profile-header">
+      <div class="profile-av">AK</div>
+      <div style="flex:1">
+        <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800">Ahsan Khan</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">?? Gulberg III, Lahore · Member since Jan 2024</div>
+        <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
+          <span class="deal-tag tag-food">Food Lover</span>
+          <span class="deal-tag tag-electronics">Tech</span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="verified">? Verified User</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">Level 3 Scout</div>
+      </div>
+    </div>
+    <div class="profile-stats">
+      <div class="pstat"><div class="pstat-val">47</div><div class="pstat-label">Deals Redeemed</div></div>
+      <div class="pstat"><div class="pstat-val">23</div><div class="pstat-label">Sightings Posted</div></div>
+      <div class="pstat"><div class="pstat-val">12</div><div class="pstat-label">Bookmarks</div></div>
+    </div>
+    <div style="margin-top:16px">
+      <div class="sec-head">Saved Locations</div>
+      <div id="saved-locs"></div>
+    </div>
+    <div style="margin-top:16px">
+      <div class="sec-head">Notification Preferences</div>
+      <div id="notif-prefs"></div>
+    </div>
+    <div style="margin-top:16px">
+      <div class="sec-head">Recently Viewed</div>
+      <div class="deal-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))" id="recent-viewed"></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- DEAL DETAIL MODAL -->
+<div id="deal-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div style="font-family:'Syne',sans-serif;font-weight:700">Deal Details</div>
+      <button onclick="closeDeal()" style="background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:5px 12px;color:var(--text);cursor:pointer;font-family:inherit;font-size:12px">? Close</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-main" id="modal-main"></div>
+      <div class="modal-side" id="modal-side"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================== DATA ==============================
+const DEALS=[
+  {id:1,shop:"Café Zest",emoji:"?",cat:"food",tag:"tag-food",title:"50% off All Beverages",disc:50,dist:.2,expiry:7020,flash:true,rating:4.8,worthit:94,sightings:12,desc:"All hot and cold drinks at half price. Valid for dine-in only. Includes specialty coffees, teas, and cold brew.",lat:36,lng:18,saved:false,orig:650,price:325},
+  {id:2,shop:"TechZone",emoji:"??",cat:"electronics",tag:"tag-electronics",title:"iPhone Case Bundle — 3 for 1",disc:66,dist:.45,expiry:28800,flash:false,rating:4.5,worthit:88,sightings:5,desc:"Pick any 3 premium phone cases for the price of one. Covers all major brands.",lat:22,lng:45,saved:true,orig:3600,price:1200},
+  {id:3,shop:"Zara Outlet",emoji:"??",cat:"fashion",tag:"tag-fashion",title:"End of Season — 40% Off",disc:40,dist:.7,expiry:86400,flash:false,rating:4.2,worthit:81,sightings:23,desc:"Selected styles from the spring collection at 40% off. In-store only.",lat:55,lng:68,saved:false,orig:8500,price:5100},
+  {id:4,shop:"GlowUp Studio",emoji:"??",cat:"beauty",tag:"tag-beauty",title:"Facial + Massage Combo",disc:35,dist:.3,expiry:18000,flash:true,rating:4.9,worthit:97,sightings:8,desc:"60-minute facial paired with a 30-minute shoulder & neck massage by certified therapists.",lat:40,lng:72,saved:true,orig:4500,price:2925},
+  {id:5,shop:"FitZone Gym",emoji:"???",cat:"sports",tag:"tag-sports",title:"Monthly Membership Deal",disc:30,dist:.9,expiry:172800,flash:false,rating:4.3,worthit:79,sightings:3,desc:"First month at 30% off. Full facility access, group classes, and free trainer session.",lat:18,lng:56,saved:false,orig:6000,price:4200},
+  {id:6,shop:"HomeSense",emoji:"???",cat:"home",tag:"tag-home",title:"Buy 2 Get 1 Free — Cushions",disc:33,dist:.5,expiry:43200,flash:false,rating:4.0,worthit:72,sightings:6,desc:"Mix and match any cushion covers and throws from the entire range.",lat:64,lng:34,saved:false,orig:2400,price:1600},
+  {id:7,shop:"Burger Bros",emoji:"??",cat:"food",tag:"tag-food",title:"Double Burger Wednesday",disc:50,dist:.15,expiry:10800,flash:true,rating:4.7,worthit:92,sightings:31,desc:"Every Wednesday: buy one double smash burger, get one free. Dine-in or takeaway.",lat:48,lng:27,saved:true,orig:1200,price:600},
+  {id:8,shop:"Luxe Watches",emoji:"?",cat:"electronics",tag:"tag-electronics",title:"Clearance — Up to 60% Off",disc:60,dist:1.2,expiry:259200,flash:false,rating:4.1,worthit:76,sightings:4,desc:"Premium watch brands clearing last season inventory. Limited pieces available.",lat:75,lng:60,saved:false,orig:45000,price:18000},
+  {id:9,shop:"Sushi Maru",emoji:"??",cat:"food",tag:"tag-food",title:"Lunch Set — 45% Off",disc:45,dist:.6,expiry:5400,flash:true,rating:4.6,worthit:89,sightings:19,desc:"Premium 8-piece sushi set with miso soup and salad. Lunch hours only, 12–3 PM.",lat:32,lng:50,saved:false,orig:2200,price:1210},
+  {id:10,shop:"Sole Street",emoji:"??",cat:"fashion",tag:"tag-fashion",title:"Nike & Adidas 25% Off",disc:25,dist:.8,expiry:129600,flash:false,rating:4.4,worthit:83,sightings:14,desc:"All branded sports shoes on sale this weekend. Select styles, while stocks last.",lat:60,lng:75,saved:false,orig:12000,price:9000},
+  {id:11,shop:"The Brew Lab",emoji:"??",cat:"food",tag:"tag-food",title:"Happy Hour: 2 for 1 Drinks",disc:50,dist:.25,expiry:3600,flash:true,rating:4.5,worthit:91,sightings:22,desc:"5–7 PM every day. All draft options and mocktails. Bar seating only.",lat:43,lng:14,saved:false,orig:900,price:450},
+  {id:12,shop:"EcoHome",emoji:"??",cat:"home",tag:"tag-home",title:"Indoor Plants Bundle",disc:20,dist:1.0,expiry:345600,flash:false,rating:3.9,worthit:68,sightings:2,desc:"6-plant starter set with soil and ceramic pots. Perfect for beginners.",lat:14,lng:80,saved:false,orig:3500,price:2800},
+];
+
+let activeCat='all';let flashFilter=true;let heatmapOn=false;
+let verifyStep=0;let bizTab='overview';let notifTab='all';
+let surpriseHistory=[];
+const savedDeals=new Set([2,4,7]);
+
+// ============================== INIT ==============================
+window.onload=function(){
+  initTicker();initFeed();initMap();initFlash();initRoute();
+  initBookmarks();initNotifications();initSurprise();
+  initBusiness();initVerify();initProfile();
+  startCountdowns();
+};
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  const pages=['feed','map','flash','route','bookmarks','notifications','surprise','business','verify','profile'];
+  const btns=document.querySelectorAll('.nav-btn');
+  btns.forEach(b=>b.classList.remove('active'));
+  const i=pages.indexOf(id);if(i>=0&&btns[i])btns[i].classList.add('active');
+}
+
+// ============================== TICKER ==============================
+function initTicker(){
+  const fl=DEALS.filter(d=>d.flash);
+  const txt=fl.map(d=>`<span class="ticker-item"><strong style="color:var(--text)">${d.shop}</strong> <span class="ticker-pct">-${d.disc}%</span> · ${d.title} · ${(d.dist*1000).toFixed(0)}m</span>`).join('');
+  document.getElementById('ticker').innerHTML=txt+txt;
+}
+
+// ============================== HELPERS ==============================
+function fmtTime(s){
+  if(s<=0)return'Expired';
+  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sc=s%60;
+  if(h>0)return`${h}h ${m}m`;if(m>0)return`${m}m ${sc}s`;return`${sc}s`;
+}
+function fmtDist(d){return d<1?(d*1000).toFixed(0)+'m':d.toFixed(1)+'km';}
+
+// ============================== FEED ==============================
+function initFeed(){renderDeals();renderHeatmap();renderSightings();renderExpiring();}
+
+function dealCard(d){
+  const urgent=d.expiry>0&&d.expiry<3600;
+  return`<div class="deal-card${d.flash?' flash glow':''}" onclick="openDeal(${d.id})">
+    ${d.flash?'<div class="flash-label">? FLASH</div>':''}
+    <div class="deal-img">${d.emoji}<div class="deal-badge">-${d.disc}%</div></div>
+    <div class="deal-body">
+      <div class="deal-shop">${d.shop} <span class="verified">?</span></div>
+      <div class="deal-title">${d.title}</div>
+      <div class="deal-meta">
+        <span class="deal-tag ${d.tag}">${d.cat}</span>
+        <span class="deal-dist">?? ${fmtDist(d.dist)}</span>
+        ${d.sightings>0?`<span style="font-size:10px;color:var(--text3)">?? ${d.sightings}</span>`:''}
+      </div>
+      <div class="deal-timer${urgent?' urgent':''}" id="dt-${d.id}">? ${fmtTime(d.expiry)}</div>
+    </div>
+    <div class="deal-footer">
+      <span class="worth-it">? ${d.worthit}%</span>
+      <button class="bm-btn${savedDeals.has(d.id)?' saved':''}" onclick="toggleBM(event,${d.id})">${savedDeals.has(d.id)?'??':'???'}</button>
+    </div>
+  </div>`;
+}
+
+function renderDeals(){
+  let list=[...DEALS];
+  if(activeCat!=='all')list=list.filter(d=>d.cat===activeCat);
+  if(flashFilter)list=list.filter(d=>d.flash);
+  const q=(document.getElementById('search-input')||{}).value||'';
+  if(q)list=list.filter(d=>d.title.toLowerCase().includes(q.toLowerCase())||d.shop.toLowerCase().includes(q.toLowerCase()));
+  list.sort((a,b)=>a.dist-b.dist);
+  document.getElementById('deal-count').textContent=`${list.length} deal${list.length!==1?'s':''} found`;
+  document.getElementById('deal-grid').innerHTML=list.length?list.map(dealCard).join(''):`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3)">?? No deals found</div>`;
+}
+
+function setCat(cat,el){
+  activeCat=cat;
+  document.querySelectorAll('#cat-chips .chip:not(#flash-chip)').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');renderDeals();
+}
+function toggleFF(el){flashFilter=!flashFilter;el.classList.toggle('active',flashFilter);renderDeals();}
+
+function renderHeatmap(){
+  const zones=[{n:'Liberty Market',d:94,c:'var(--accent)'},{n:'MM Alam Road',d:78,c:'#f59e0b'},{n:'Gulberg Main',d:65,c:'#4d9fff'},{n:'Fortress Stadium',d:42,c:'#a855f7'}];
+  document.getElementById('heatmap-list').innerHTML=zones.map(z=>`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span>${z.n}</span><span style="color:var(--text3)">${z.d}/km²</span></div><div class="occ-bar"><div class="occ-fill" style="width:${z.d}%;background:${z.c}"></div></div></div>`).join('');
+}
+
+function renderSightings(){
+  const s=[{u:'@raza_eats',t:'Burger deal confirmed — queue is fast!',time:'3m',e:'??'},{u:'@shopaholic_pk',t:'Zara sale real, sizes running out',time:'8m',e:'??'},{u:'@techbro404',t:'TechZone cases legit, just grabbed mine',time:'22m',e:'??'}];
+  document.getElementById('feed-sightings').innerHTML=s.map(x=>`<div class="sighting"><div class="sighting-av">${x.e}</div><div><div class="sighting-tx"><strong>${x.u}</strong>: ${x.t}</div><div class="sighting-tm">${x.time} ago</div></div></div>`).join('');
+}
+
+function renderExpiring(){
+  const ex=DEALS.filter(d=>d.expiry>0&&d.expiry<7200).sort((a,b)=>a.expiry-b.expiry).slice(0,4);
+  document.getElementById('expiring-list').innerHTML=ex.map(d=>`<div class="mini-card" onclick="openDeal(${d.id})"><div class="mini-emoji">${d.emoji}</div><div class="mini-info"><div class="mini-shop">${d.shop}</div><div class="mini-title">${d.title}</div><div class="mini-sub deal-timer urgent" id="et-${d.id}">? ${fmtTime(d.expiry)}</div></div><div style="font-size:18px;font-weight:800;color:var(--accent)">-${d.disc}%</div></div>`).join('');
+}
+
+function toggleBM(e,id){
+  e.stopPropagation();
+  savedDeals.has(id)?savedDeals.delete(id):savedDeals.add(id);
+  renderDeals();initFlash();initBookmarks();
+}
+
+// ============================== MAP ==============================
+function initMap(){
+  document.getElementById('map-list').innerHTML=DEALS.map(d=>`<div class="mini-card" onclick="openDeal(${d.id})"><div class="mini-emoji">${d.emoji}</div><div class="mini-info"><div class="mini-shop">${d.shop} · -${d.disc}%</div><div class="mini-title">${d.title.substring(0,30)}${d.title.length>30?'...':''}</div><div class="mini-sub">?? ${fmtDist(d.dist)}</div></div></div>`).join('');
+  document.getElementById('map-pins').innerHTML=DEALS.map(d=>`<div class="map-pin" style="left:${d.lng}%;top:${d.lat}%" onclick="openDeal(${d.id})"><div class="pin-box${d.flash?' pin-flash':''}">-${d.disc}%</div><div class="pin-tail"></div></div>`).join('');
+}
+
+function toggleHeat(el){
+  heatmapOn=!heatmapOn;
+  document.getElementById('heat-toggle').classList.toggle('on',heatmapOn);
+  document.getElementById('heat-blobs').style.display=heatmapOn?'block':'none';
+}
+function toggleHeatBtn(){
+  heatmapOn=!heatmapOn;
+  document.getElementById('heat-toggle').classList.toggle('on',heatmapOn);
+  document.getElementById('heat-blobs').style.display=heatmapOn?'block':'none';
+}
+
+// ============================== FLASH ==============================
+function initFlash(){
+  const fl=DEALS.filter(d=>d.flash);
+  document.getElementById('flash-grid').innerHTML=fl.map(d=>`<div class="deal-card flash glow" onclick="openDeal(${d.id})">
+    <div class="flash-label">? FLASH</div>
+    <div class="deal-img" style="height:150px;font-size:50px">${d.emoji}<div class="deal-badge" style="font-size:20px">-${d.disc}%</div></div>
+    <div class="deal-body">
+      <div class="deal-shop">${d.shop} <span class="verified">?</span></div>
+      <div class="deal-title" style="font-size:15px">${d.title}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+        <div><div style="font-size:11px;color:var(--text3);text-decoration:line-through">Rs ${d.orig.toLocaleString()}</div><div style="font-size:20px;font-weight:700;color:var(--accent)">Rs ${d.price.toLocaleString()}</div></div>
+        <div style="text-align:right"><div style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--accent)" id="ft-${d.id}">${fmtTime(d.expiry)}</div><div style="font-size:9px;color:var(--text3)">remaining</div></div>
+      </div>
+      <div class="deal-meta" style="margin-top:6px">
+        <span class="deal-dist">?? ${fmtDist(d.dist)}</span>
+        <span style="font-size:10px;color:var(--green)">? ${d.worthit}%</span>
+        <span style="font-size:10px;color:var(--text3)">?? ${d.sightings}</span>
+      </div>
+    </div>
+    <div class="deal-footer">
+      <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();alert('Directions to ${d.shop}!')">?? Directions</button>
+      <button class="bm-btn${savedDeals.has(d.id)?' saved':''}" onclick="toggleBM(event,${d.id})">${savedDeals.has(d.id)?'??':'???'}</button>
+    </div>
+  </div>`).join('');
+}
+
+// ============================== ROUTE ==============================
+function initRoute(){
+  const routes=[{from:'Home (Gulberg III)',to:'Office (Liberty)',active:true,deals:4},{from:'Home',to:'DHA Phase 5',active:false,deals:7}];
+  document.getElementById('routes-list').innerHTML=routes.map(r=>`<div class="route-card"><div style="flex:1"><div style="font-size:13px;font-weight:600">${r.from} ? ${r.to}</div><div style="font-size:10px;color:var(--text3);margin-top:2px">${r.deals} active deals along route</div></div><div class="${r.active?'live-badge':'chip'}">${r.active?'<div class="live-dot"></div>ACTIVE':'PAUSED'}</div></div>`).join('');
+  document.getElementById('route-deals').innerHTML=DEALS.slice(0,4).map(dealCard).join('');
+}
+
+// ============================== BOOKMARKS ==============================
+function initBookmarks(){
+  const saved=[...savedDeals].map(id=>DEALS.find(d=>d.id===id)).filter(Boolean);
+  document.getElementById('bm-count').textContent=`${saved.length} saved`;
+  const cats=[{n:'All Saved',i:'??',c:saved.length},{n:'Food',i:'??',c:saved.filter(d=>d.cat==='food').length},{n:'Fashion',i:'??',c:saved.filter(d=>d.cat==='fashion').length},{n:'Expiring',i:'?',c:saved.filter(d=>d.expiry<14400).length}];
+  document.getElementById('bm-collections').innerHTML=cats.map(c=>`<div style="display:flex;align-items:center;gap:6px;padding:7px 8px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--text2);margin-bottom:3px" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='none'">${c.i} ${c.n} <span style="margin-left:auto;font-size:10px;color:var(--text3)">${c.c}</span></div>`).join('');
+  const exp=saved.filter(d=>d.expiry>0&&d.expiry<14400);
+  document.getElementById('bm-expiring').innerHTML=exp.length?`<div style="background:rgba(255,77,109,.08);border:1px solid rgba(255,77,109,.25);border-radius:var(--radius);padding:10px 14px"><div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:6px">?? ${exp.length} saved deal${exp.length>1?'s':''} expiring soon</div>${exp.map(d=>`<div style="font-size:11px;color:var(--text2);padding:2px 0">${d.emoji} ${d.shop} — ${fmtTime(d.expiry)}</div>`).join('')}</div>`:'';
+  document.getElementById('bm-grid').innerHTML=saved.length?saved.map(dealCard).join(''):`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3)">?? No saved deals yet</div>`;
+}
+
+// ============================== NOTIFICATIONS ==============================
+const NOTIFS=[
+  {id:1,type:'deals',icon:'?',bg:'rgba(255,77,109,.15)',title:'Flash Deal Alert',desc:'Café Zest just dropped 50% off all beverages — 200m from you!',time:'2 min ago',read:false},
+  {id:2,type:'expiry',icon:'?',bg:'rgba(245,158,11,.15)',title:'Saved Deal Expiring',desc:'Your bookmarked "GlowUp Facial Combo" expires in 2 hours.',time:'30 min ago',read:false},
+  {id:3,type:'sightings',icon:'???',bg:'rgba(46,204,113,.15)',title:'Sighting Confirmed',desc:'3 users confirmed Burger Bros deal is still active & in stock.',time:'1 hr ago',read:false},
+  {id:4,type:'deals',icon:'??',bg:'rgba(77,159,255,.15)',title:'New Deal Near Home',desc:'EcoHome added 20% off indoor plants deal, 1km from you.',time:'2 hr ago',read:true},
+  {id:5,type:'route',icon:'???',bg:'rgba(168,85,247,.15)',title:'Route Alert',desc:'Sushi Maru has a flash lunch deal along your morning commute.',time:'3 hr ago',read:true},
+  {id:6,type:'expiry',icon:'?',bg:'rgba(245,158,11,.15)',title:'Reminder',desc:'Sushi Maru lunch set expires in 1.5 hours. Go now!',time:'3.5 hr ago',read:true},
+  {id:7,type:'sightings',icon:'???',bg:'rgba(46,204,113,.15)',title:'Sighting Update',desc:'TechZone iPhone cases: 2 users confirm "still in stock"',time:'4 hr ago',read:true},
+  {id:8,type:'deals',icon:'??',bg:'rgba(168,85,247,.15)',title:'Weekend Deals Live',desc:'17 new deals posted near you. Explore the weekend map.',time:'Yesterday',read:true},
+];
+
+function initNotifications(){renderNotifs();}
+function renderNotifs(){
+  let list=notifTab==='all'?NOTIFS:NOTIFS.filter(n=>n.type===notifTab);
+  document.getElementById('notif-list').innerHTML=list.map(n=>`<div class="notif-item${n.read?'':' unread'}" onclick="markRead(${n.id})"><div class="notif-icon" style="background:${n.bg}">${n.icon}</div><div style="flex:1"><div class="notif-title">${n.title}</div><div class="notif-desc">${n.desc}</div><div class="notif-time">${n.time}</div></div>${n.read?'':'<div style="width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:4px"></div>'}</div>`).join('');
+}
+function setNotifTab(tab,el){notifTab=tab;document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderNotifs();}
+function markRead(id){NOTIFS.find(n=>n.id===id).read=true;renderNotifs();}
+function markAllRead(){NOTIFS.forEach(n=>n.read=true);renderNotifs();}
+
+// ============================== SURPRISE ==============================
+function initSurprise(){
+  surpriseHistory=[{emoji:'?',shop:'Café Zest',title:'50% off Beverages',when:'Yesterday 6pm'},{emoji:'??',shop:'Burger Bros',title:'Double Burger',when:'3 days ago'}];
+  renderSurpHistory();
+}
+function rollSurprise(){
+  const nearby=DEALS.filter(d=>d.dist<=.5&&d.rating>=4);
+  if(!nearby.length){document.getElementById('surp-title').textContent='No deals within 500m right now';return;}
+  const pick=nearby[Math.floor(Math.random()*nearby.length)];
+  document.getElementById('surp-emoji').textContent=pick.emoji;
+  document.getElementById('surp-title').textContent=pick.title;
+  document.getElementById('surp-desc').textContent=`?? ${fmtDist(pick.dist)} away · ? ${pick.rating} · ${pick.worthit}% say worth it`;
+  const si=document.getElementById('surp-info');si.style.display='block';
+  si.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="font-size:36px">${pick.emoji}</div><div><div style="font-weight:700">${pick.shop}</div><div class="verified">? Verified</div></div><div style="margin-left:auto;font-size:26px;font-weight:800;color:var(--accent)">-${pick.disc}%</div></div><div style="font-size:12px;color:var(--text2);margin-bottom:10px">${pick.desc}</div><div style="display:flex;gap:6px"><button class="btn btn-primary btn-sm" onclick="openDeal(${pick.id})">View Deal</button><button class="btn btn-ghost btn-sm">Get Directions ??</button></div>`;
+  surpriseHistory.unshift({emoji:pick.emoji,shop:pick.shop,title:pick.title,when:'Just now'});
+  renderSurpHistory();
+}
+function renderSurpHistory(){
+  document.getElementById('surp-history').innerHTML=surpriseHistory.slice(0,5).map(s=>`<div class="mini-card"><div class="mini-emoji">${s.emoji}</div><div class="mini-info"><div class="mini-shop">${s.when}</div><div class="mini-title">${s.shop}</div><div class="mini-sub">${s.title}</div></div></div>`).join('');
+}
+function triggerSurprise(){showPage('surprise');setTimeout(rollSurprise,150);}
+
+// ============================== BUSINESS ==============================
+function initBusiness(){setBizTab('overview',document.querySelector('.biz-tab'));}
+function setBizTab(tab,el){
+  bizTab=tab;
+  document.querySelectorAll('.biz-tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  const c=document.getElementById('biz-content');
+  if(tab==='overview'){
+    c.innerHTML=`<div class="grid-4" style="margin-bottom:18px">
+      <div class="stat-card"><div class="stat-label">Total Views</div><div class="stat-value" style="color:var(--blue)">2,847</div><div class="stat-delta up">? 23% this week</div></div>
+      <div class="stat-card"><div class="stat-label">Redemptions</div><div class="stat-value" style="color:var(--green)">312</div><div class="stat-delta up">? 18% vs last week</div></div>
+      <div class="stat-card"><div class="stat-label">Avg Rating</div><div class="stat-value" style="color:var(--amber)">4.7?</div><div class="stat-delta up">? 0.2 this month</div></div>
+      <div class="stat-card"><div class="stat-label">Active Deals</div><div class="stat-value" style="color:var(--accent)">3</div><div class="stat-delta" style="color:var(--text3)">2 pending review</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="stat-card">
+        <div style="font-size:13px;font-weight:600;margin-bottom:3px">Peak Activity Hours</div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:10px">When users engage with your deals</div>
+        <div class="bar-chart" id="peak-chart"></div>
+        <div style="display:flex;margin-top:3px" id="peak-labels"></div>
+      </div>
+      <div class="stat-card">
+        <div style="font-size:13px;font-weight:600;margin-bottom:3px">Engagement Breakdown</div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Actions on your deals this week</div>
+        ${[['Views','2847',100,'var(--blue)'],['Saves','486',17,'var(--purple)'],['Directions','312',11,'var(--green)'],['Shares','94',3,'var(--amber)']].map(([l,v,p,cl])=>`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span>${l}</span><span style="color:var(--text3)">${v}</span></div><div class="occ-bar"><div class="occ-fill" style="width:${p}%;background:${cl}"></div></div></div>`).join('')}
+      </div>
+    </div>`;
+    setTimeout(()=>{
+      const v=[30,20,55,75,95,88,98,82,60,42,30,18];
+      const lbs=['8a','9a','10a','11a','12p','1p','2p','3p','4p','5p','6p','7p'];
+      const mx=Math.max(...v);
+      const ch=document.getElementById('peak-chart');
+      const lb=document.getElementById('peak-labels');
+      if(ch)ch.innerHTML=v.map((x,i)=>`<div class="bar${x>=88?' peak':''}" style="height:${x/mx*100}%;flex:1" title="${lbs[i]}: ${x}%"></div>`).join('');
+      if(lb)lb.innerHTML=lbs.map(l=>`<div class="bar-label" style="flex:1">${l}</div>`).join('');
+    },50);
+  } else if(tab==='deals'){
+    c.innerHTML=`<div class="grid-2">
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px">Active Deals</div>
+        ${DEALS.slice(0,3).map(d=>`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:center"><div style="font-size:30px">${d.emoji}</div><div style="flex:1"><div style="font-weight:600;font-size:13px">${d.title}</div><div style="font-size:10px;color:var(--text3);margin-top:1px">${d.cat} · -${d.disc}% · Expires ${fmtTime(d.expiry)}</div><div style="display:flex;gap:8px;margin-top:4px"><span style="font-size:10px;color:var(--green)">?? ${(Math.random()*400+100).toFixed(0)} views</span><span style="font-size:10px;color:var(--blue)">?? ${(Math.random()*40+5).toFixed(0)} saves</span></div></div><div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end"><div class="live-badge"><div class="live-dot"></div>LIVE</div><button class="btn btn-ghost btn-sm" style="margin-top:3px">Edit</button><button class="btn btn-danger btn-sm">Pause</button></div></div>`).join('')}
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:14px">+ Post New Deal</div>
+        <div class="form-group"><label class="form-label">Deal Title</label><input class="form-input" type="text" placeholder="e.g. 50% off all items"></div>
+        <div class="form-group"><label class="form-label">Discount %</label><input class="form-input" type="number" placeholder="30" min="1" max="99"></div>
+        <div class="form-group"><label class="form-label">Category</label><select class="form-input"><option>Food & Drinks</option><option>Fashion</option><option>Electronics</option><option>Beauty</option><option>Sports</option><option>Home</option></select></div>
+        <div class="form-group"><label class="form-label">Description</label><textarea class="form-input" placeholder="What makes this deal special?"></textarea></div>
+        <div class="form-group"><label class="form-label">Expiry Date & Time</label><input class="form-input" type="datetime-local"></div>
+        <div class="form-group">
+          <label class="form-label">Flash Deal</label>
+          <div class="toggle" onclick="this.querySelector('.t-track').classList.toggle('on')"><div class="t-track"><div class="t-thumb"></div></div><span style="font-size:11px;color:var(--text2)">Enable flash deal glow & ticker</span></div>
+        </div>
+        <button class="btn btn-primary" style="width:100%">Submit for Review</button>
+        <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:6px">Reviewed within 2 hours</div>
+      </div>
+    </div>`;
+  } else if(tab==='analytics'){
+    c.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:12px">Peak Time Analytics — Last 7 Days</div>
+    <div class="stat-card" style="margin-bottom:14px">
+      <div class="bar-chart" id="an-chart"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:3px">
+        ${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<div class="bar-label" style="flex:1">${d}</div>`).join('')}
+      </div>
+    </div>
+    <div class="grid-3">
+      <div class="stat-card"><div class="stat-label">Best Day</div><div class="stat-value" style="font-size:20px;color:var(--green)">Saturday</div><div style="font-size:10px;color:var(--text3)">Peak: 6–9 PM</div></div>
+      <div class="stat-card"><div class="stat-label">Avg Dwell Time</div><div class="stat-value" style="font-size:20px;color:var(--blue)">3.2s</div><div style="font-size:10px;color:var(--text3)">Per deal card</div></div>
+      <div class="stat-card"><div class="stat-label">Conversion</div><div class="stat-value" style="font-size:20px;color:var(--amber)">11%</div><div style="font-size:10px;color:var(--text3)">Views ? Directions</div></div>
+    </div>`;
+    setTimeout(()=>{
+      const v=[62,45,80,58,88,95,72];const mx=Math.max(...v);
+      const ch=document.getElementById('an-chart');
+      if(ch)ch.innerHTML=v.map(x=>`<div class="bar${x>=88?' peak':''}" style="height:${x/mx*100}%;flex:1"></div>`).join('');
+    },50);
+  } else if(tab==='insights'){
+    c.innerHTML=`<div class="grid-2">
+      <div class="stat-card">
+        <div style="font-size:13px;font-weight:600;margin-bottom:3px">Neighborhood Category Trends</div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Most popular deal types in your area</div>
+        ${[['Food & Drinks',78,'var(--green)'],['Fashion',62,'var(--pink)'],['Electronics',55,'var(--blue)'],['Beauty',41,'var(--purple)'],['Sports',28,'var(--amber)']].map(([l,p,cl],i)=>`<div class="ins-row"><span style="font-size:10px;color:var(--text3);width:14px">${i+1}</span><span style="font-size:11px;width:90px">${l}</span><div class="ins-bar-wrap"><div class="ins-bar" style="width:${p}%;background:${cl}"></div></div><span style="font-size:11px;color:var(--text3);width:32px;text-align:right">${p}%</span></div>`).join('')}
+      </div>
+      <div class="stat-card">
+        <div style="font-size:13px;font-weight:600;margin-bottom:3px">Competitor Activity</div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:10px">Anonymized nearby businesses</div>
+        ${[{n:'Competitor A',d:5,a:38,live:true},{n:'Competitor B',d:2,a:25,live:false},{n:'Competitor C',d:8,a:45,live:true}].map(x=>`<div style="padding:10px;background:var(--bg3);border-radius:var(--radius2);margin-bottom:8px;display:flex;align-items:center;gap:8px"><div style="flex:1"><div style="font-size:12px;font-weight:600">${x.n}</div><div style="font-size:10px;color:var(--text3)">${x.d} deals · avg ${x.a}% off</div></div><div class="${x.live?'live-badge':'chip'}">${x.live?'<div class="live-dot"></div>ACTIVE':'QUIET'}</div></div>`).join('')}
+      </div>
+    </div>`;
+  } else if(tab==='occupancy'){
+    c.innerHTML=`<div style="max-width:460px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px">Live Occupancy Signals</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6">These badges appear on your deal cards in real time, alerting nearby users to visit now.</div>
+      ${[{l:'Limited Stock',d:'Show "Limited Stock!" badge on your deals',i:'??',on:true},{l:'Tables Available',d:'Show remaining table count for dine-in customers',i:'??',on:false},{l:'Queue Short',d:'Signal that wait time is minimal right now',i:'?',on:true},{l:'Sold Out',d:'Mark a specific deal without removing it from the feed',i:'?',on:false}].map(o=>`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px"><div style="font-size:22px">${o.i}</div><div style="flex:1"><div style="font-size:12px;font-weight:600">${o.l}</div><div style="font-size:10px;color:var(--text3)">${o.d}</div></div><div class="toggle" onclick="this.querySelector('.t-track').classList.toggle('on')"><div class="t-track${o.on?' on':''}"><div class="t-thumb"></div></div></div></div>`).join('')}
+      <div style="margin-top:12px;padding:12px;background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.25);border-radius:var(--radius2);font-size:12px;color:var(--green)">?? Shops using Live Occupancy see <strong>2.4x</strong> more foot traffic during slow hours.</div>
+    </div>`;
+  }
+}
+
+// ============================== VERIFY ==============================
+function initVerify(){renderVerify();}
+function renderVerify(){
+  const steps=['Business Info','Address','Upload Docs','Done'];
+  document.getElementById('verify-steps').innerHTML=steps.map((_,i)=>`<div class="step-dot${i<verifyStep?' done':i===verifyStep?' current':''}"></div>`).join('');
+  const c=document.getElementById('verify-content');
+  if(verifyStep===0){
+    c.innerHTML=`<div class="stat-card"><div style="font-size:14px;font-weight:700;margin-bottom:14px">Step 1: Business Information</div>
+      <div class="form-group"><label class="form-label">Business Name</label><input class="form-input" type="text" placeholder="Your shop name"></div>
+      <div class="form-group"><label class="form-label">Business Type</label><select class="form-input"><option>Restaurant / Café</option><option>Retail Store</option><option>Beauty Salon</option><option>Gym / Sports</option><option>Electronics</option></select></div>
+      <div class="form-group"><label class="form-label">Owner Name</label><input class="form-input" type="text" placeholder="Full name"></div>
+      <div class="form-group"><label class="form-label">Phone</label><input class="form-input" type="tel" placeholder="+92 XXX XXXXXXX"></div>
+      <button class="btn btn-primary" onclick="verifyStep=1;renderVerify()">Next: Address ?</button></div>`;
+  } else if(verifyStep===1){
+    c.innerHTML=`<div class="stat-card"><div style="font-size:14px;font-weight:700;margin-bottom:14px">Step 2: Verify Address</div>
+      <div class="form-group"><label class="form-label">Street Address</label><input class="form-input" type="text" placeholder="14-A, MM Alam Road"></div>
+      <div class="form-group"><label class="form-label">Neighbourhood</label><input class="form-input" type="text" placeholder="Gulberg, Lahore"></div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius2);height:140px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;cursor:pointer;font-size:12px;color:var(--text3)" onclick="alert('Map pin picker')">??? Click to pin exact location on map</div>
+      <div style="display:flex;gap:7px"><button class="btn btn-ghost" onclick="verifyStep=0;renderVerify()">? Back</button><button class="btn btn-primary" onclick="verifyStep=2;renderVerify()">Next: Documents ?</button></div></div>`;
+  } else if(verifyStep===2){
+    c.innerHTML=`<div class="stat-card"><div style="font-size:14px;font-weight:700;margin-bottom:14px">Step 3: Upload Documents</div>
+      ${[['Business Registration','SECP / Trade License'],['CNIC / ID Proof','Owner identity document'],['Shop Photo','Clear exterior photo']].map(([t,d])=>`<div class="upload-zone" style="margin-bottom:10px" onclick="this.style.borderColor='var(--accent)'"><div style="font-size:20px;margin-bottom:3px">??</div><div style="font-size:12px;font-weight:600">${t}</div><div style="font-size:10px;color:var(--text3)">${d}</div></div>`).join('')}
+      <div style="display:flex;gap:7px;margin-top:10px"><button class="btn btn-ghost" onclick="verifyStep=1;renderVerify()">? Back</button><button class="btn btn-primary" onclick="verifyStep=3;renderVerify()">Submit for Review ?</button></div></div>`;
+  } else {
+    c.innerHTML=`<div class="stat-card" style="text-align:center;padding:32px"><div style="font-size:52px;margin-bottom:14px">??</div><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:6px">Application Submitted!</div><div style="font-size:13px;color:var(--text2);max-width:380px;margin:0 auto 16px;line-height:1.6">Our team will review your documents and verify your address within 2–3 business days.</div><div class="verified" style="font-size:13px;justify-content:center;margin-bottom:16px">? Verification Pending</div><button class="btn btn-ghost" onclick="verifyStep=0;renderVerify()">Start Over</button></div>`;
+  }
+}
+
+// ============================== PROFILE ==============================
+function initProfile(){
+  const locs=[{n:'Home',i:'??',a:'Gulberg III, Lahore',on:true},{n:'Work',i:'??',a:'Liberty Market, Lahore',on:true},{n:'Gym',i:'???',a:'Johar Town, Lahore',on:false}];
+  document.getElementById('saved-locs').innerHTML=locs.map(l=>`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius2);padding:10px 12px;margin-bottom:7px;display:flex;align-items:center;gap:8px"><span style="font-size:18px">${l.i}</span><div style="flex:1"><div style="font-size:12px;font-weight:600">${l.n}</div><div style="font-size:10px;color:var(--text3)">${l.a}</div></div><div class="toggle" onclick="this.querySelector('.t-track').classList.toggle('on')"><div class="t-track${l.on?' on':''}"><div class="t-thumb"></div></div></div></div>`).join('');
+  const prefs=[{l:'Flash Deals near me',on:true},{l:'Saved deals expiring',on:true},{l:'New deals on my route',on:true},{l:'Sighting confirmations',on:false},{l:'Weekend roundup',on:true}];
+  document.getElementById('notif-prefs').innerHTML=prefs.map(p=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px">${p.l}</span><div class="toggle" onclick="this.querySelector('.t-track').classList.toggle('on')"><div class="t-track${p.on?' on':''}"><div class="t-thumb"></div></div></div></div>`).join('');
+  document.getElementById('recent-viewed').innerHTML=DEALS.slice(0,4).map(dealCard).join('');
+}
+
+// ============================== DEAL MODAL ==============================
+function openDeal(id){
+  const d=DEALS.find(x=>x.id===id);if(!d)return;
+  document.getElementById('modal-main').innerHTML=`
+    <div style="font-size:72px;text-align:center;margin-bottom:14px;background:var(--bg3);border-radius:var(--radius);padding:20px">${d.emoji}</div>
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">${d.shop} · <span class="verified">? Verified</span></div>
+    <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:8px;line-height:1.1">${d.title}</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.6">${d.desc}</div>
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <div style="flex:1;text-align:center;padding:12px;background:var(--bg3);border-radius:var(--radius2)"><div style="font-size:36px;font-weight:800;color:var(--accent)">-${d.disc}%</div><div style="font-size:10px;color:var(--text3)">Discount</div></div>
+      <div style="flex:1;text-align:center;padding:12px;background:var(--bg3);border-radius:var(--radius2)"><div style="text-decoration:line-through;font-size:11px;color:var(--text3)">Rs ${d.orig.toLocaleString()}</div><div style="font-size:20px;font-weight:700;color:var(--text)">Rs ${d.price.toLocaleString()}</div><div style="font-size:10px;color:var(--text3)">Save Rs ${(d.orig-d.price).toLocaleString()}</div></div>
+    </div>
+    <div style="margin-bottom:14px"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;margin-bottom:5px">Community Verdict</div><div class="occ-bar" style="height:8px;border-radius:4px"><div class="occ-fill" style="width:${d.worthit}%;background:var(--green)"></div></div><div style="font-size:11px;color:var(--green);margin-top:3px">${d.worthit}% say "Worth it" · ? ${d.rating}</div></div>
+    <div style="display:flex;gap:7px"><button class="btn btn-primary" onclick="alert('Directions to ${d.shop}!')">?? Get Directions</button><button class="btn btn-ghost" onclick="toggleBM(event,${d.id})">${savedDeals.has(d.id)?'?? Saved':'??? Save Deal'}</button>${d.flash?'<div class="live-badge"><div class="live-dot"></div>FLASH</div>':''}</div>`;
+  document.getElementById('modal-side').innerHTML=`
+    <div style="font-size:11px;font-weight:600;margin-bottom:3px">? Time Remaining</div>
+    <div style="font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:var(--accent)" id="mc-timer">${fmtTime(d.expiry)}</div>
+    <div style="font-size:10px;color:var(--text3);margin-bottom:16px">Deal expires automatically</div>
+    <div style="font-size:11px;font-weight:600;margin-bottom:3px">?? Distance</div>
+    <div style="font-size:20px;font-weight:700;margin-bottom:16px">${fmtDist(d.dist)} away</div>
+    <div style="font-size:11px;font-weight:600;margin-bottom:6px">?? User Sightings (${d.sightings})</div>
+    ${[{t:'Confirmed active',time:'5 min ago',e:'?'},{t:'Still in stock',time:'12 min ago',e:'??'},{t:'Queue is short',time:'25 min ago',e:'?'}].map(s=>`<div class="sighting"><div class="sighting-av">${s.e}</div><div><div class="sighting-tx">${s.t}</div><div class="sighting-tm">${s.time}</div></div></div>`).join('')}
+    <button class="btn btn-ghost" style="width:100%;margin-top:10px;font-size:11px" onclick="alert('Sighting confirmed! Thanks for helping the community.')">+ Add Sighting</button>`;
+  document.getElementById('deal-modal').style.display='block';
+}
+function closeDeal(){document.getElementById('deal-modal').style.display='none';}
+document.getElementById('deal-modal').onclick=function(e){if(e.target===this)closeDeal();};
+
+// ============================== COUNTDOWNS ==============================
+function startCountdowns(){
+  setInterval(()=>{
+    DEALS.forEach(d=>{
+      if(d.expiry>0)d.expiry--;
+      const urgent=d.expiry>0&&d.expiry<3600;
+      const el=document.getElementById('dt-'+d.id);
+      if(el){el.textContent='? '+fmtTime(d.expiry);el.className='deal-timer'+(urgent?' urgent':'');}
+      const fl=document.getElementById('ft-'+d.id);if(fl)fl.textContent=fmtTime(d.expiry);
+      const et=document.getElementById('et-'+d.id);if(et)et.textContent='? '+fmtTime(d.expiry);
+    });
+    const mc=document.getElementById('mc-timer');
+    if(mc){const d=DEALS.find(x=>x.id===parseInt(mc.dataset.did||0));if(d)mc.textContent=fmtTime(d.expiry);}
+  },1000);
+}
+</script>
+</body>
+</html>
