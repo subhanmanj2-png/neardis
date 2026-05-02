@@ -3,282 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="Neardis — Hyperlocal Deal Discovery. Find real discounts near you, right now.">
-  <meta name="theme-color" content="#080810">
-  <title>Neardis — Deals Near You</title>
-
-  <!-- Favicon (emoji fallback) -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📍</text></svg>">
-
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Bebas+Neue&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-
-  <!-- Main Styles -->
-  <link rel="stylesheet" href="css/main.css">
+  <title>Neardis — Hyperlocal Deals</title>
+  <link rel="stylesheet" href="main.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Bebas+Neue&family=JetBrains+Mono&display=swap" rel="stylesheet">
 </head>
 <body>
+  <div class="app-shell">
+    <!-- Desktop Sidebar -->
+    <nav class="sidebar">
+      <div class="logo" onclick="navigate('feed')">N</div>
+      <div class="nav-item active" data-page="feed">🏷<span class="ni-label">Feed</span></div>
+      <div class="nav-item" data-page="map">🗺<span class="ni-label">Map</span></div>
+      <div class="nav-item" data-page="flash">⚡<span class="ni-label">Flash</span></div>
+      <div class="nav-sep"></div>
+      <div class="nav-item" data-page="bookmarks">🔖<span class="ni-label">Saved</span></div>
+      <div class="nav-item" data-page="notifications">🔔<span class="ni-label">Alerts</span></div>
+      <div class="nav-sep"></div>
+      <div class="nav-item" data-page="business">📊<span class="ni-label">Biz</span></div>
+      <div class="nav-item" data-page="settings">⚙️<span class="ni-label">Settings</span></div>
+    </nav>
 
-<!-- ═══════════════════════════════════════════════════════════
-     APP SHELL
-════════════════════════════════════════════════════════════ -->
-<div class="app-shell">
+    <div class="main">
+      <!-- Flash Ticker -->
+      <div class="flash-ticker" id="flash-ticker-bar">
+        <div class="ticker-label">⚡ FLASH</div>
+        <div class="ticker-wrap"><div class="ticker-inner" id="ticker">Loading...</div></div>
+      </div>
 
-  <!-- ── SIDEBAR (desktop) ───────────────────────────────── -->
-  <nav class="sidebar" id="sidebar">
-    <div class="logo" title="Neardis">N</div>
+      <!-- Content Injection Point -->
+      <div id="page-content"></div>
+    </div>
+  </div>
 
-    <!-- Primary nav -->
-    <div class="nav-item active" data-page="feed" title="Feed">
-      <span class="ni-icon">🏷</span>
-      <span class="ni-label">Feed</span>
-    </div>
-    <div class="nav-item" data-page="map" title="Map">
-      <span class="ni-icon">🗺</span>
-      <span class="ni-label">Map</span>
-    </div>
-    <div class="nav-item" data-page="flash" title="Flash Deals">
-      <span class="ni-icon">⚡</span>
-      <span class="ni-label">Flash</span>
-    </div>
-    <div class="nav-item" data-page="route" title="Route Alerts">
-      <span class="ni-icon">🛣</span>
-      <span class="ni-label">Route</span>
-    </div>
-
-    <div class="nav-sep"></div>
-
-    <!-- Secondary nav -->
-    <div class="nav-item" data-page="bookmarks" title="Saved">
-      <span class="ni-icon">🔖</span>
-      <span class="ni-label">Saved</span>
-    </div>
-    <div class="nav-item" data-page="notifications" title="Notifications">
-      <div class="badge"></div>
-      <span class="ni-icon">🔔</span>
-      <span class="ni-label">Alerts</span>
-    </div>
-    <div class="nav-item" data-page="surprise" title="Surprise Me">
-      <span class="ni-icon">✨</span>
-      <span class="ni-label">Surprise</span>
-    </div>
-
-    <div class="nav-sep"></div>
-
-    <!-- Business + Settings -->
-    <div class="nav-item" data-page="business" title="Business Dashboard">
-      <span class="ni-icon">📊</span>
-      <span class="ni-label">Biz</span>
-    </div>
-    <div class="nav-item" data-page="verify" title="Verify Shop">
-      <span class="ni-icon">✅</span>
-      <span class="ni-label">Verify</span>
-    </div>
-
-    <div class="nav-sep"></div>
-
-    <div class="nav-item" data-page="profile" title="My Profile">
-      <span class="ni-icon">👤</span>
-      <span class="ni-label">Profile</span>
-    </div>
-    <div class="nav-item" data-page="settings" title="Settings">
-      <span class="ni-icon">⚙️</span>
-      <span class="ni-label">Settings</span>
-    </div>
+  <!-- Mobile Nav -->
+  <nav class="bottom-nav">
+    <div class="bnav-item active" data-page="feed">🏷</div>
+    <div class="bnav-item" data-page="map">🗺</div>
+    <div class="bnav-item" data-page="flash">⚡</div>
+    <div class="bnav-item" data-page="bookmarks">🔖</div>
+    <div class="bnav-item" data-page="settings">⚙️</div>
   </nav>
 
-  <!-- ── MAIN AREA ───────────────────────────────────────── -->
-  <div class="main">
-
-    <!-- Flash Ticker -->
-    <div class="flash-ticker" id="flash-ticker-bar">
-      <div class="ticker-label">⚡ FLASH</div>
-      <div class="ticker-wrap">
-        <div class="ticker-inner" id="ticker">
-          <span class="ticker-item" style="color:var(--text3);font-size:11px">Loading flash deals…</span>
-        </div>
+  <!-- Global Modal -->
+  <div id="deal-modal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-head">
+        <div class="modal-head-title">Deal Details</div>
+        <button onclick="closeDeal()">✕ Close</button>
       </div>
-    </div>
-
-    <!-- Page Content (loaded dynamically) -->
-    <div id="page-content" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
-      <!-- Pages load here -->
-      <div style="display:flex;align-items:center;justify-content:center;flex:1;flex-direction:column;gap:12px;color:var(--text3)">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:4px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">NEARDIS</div>
-        <div style="font-size:13px">Loading your deals…</div>
-        <div style="display:flex;gap:4px;margin-top:4px">
-          <div class="live-dot" style="background:var(--accent)"></div>
-          <div class="live-dot" style="background:var(--accent);animation-delay:0.3s"></div>
-          <div class="live-dot" style="background:var(--accent);animation-delay:0.6s"></div>
-        </div>
+      <div class="modal-body">
+        <div class="modal-main" id="modal-main"></div>
+        <div class="modal-side" id="modal-side"></div>
       </div>
-    </div>
-
-  </div><!-- /main -->
-
-</div><!-- /app-shell -->
-
-<!-- ── BOTTOM NAV (mobile) ─────────────────────────────────── -->
-<nav class="bottom-nav" id="bottom-nav">
-  <div class="bottom-nav-inner">
-    <div class="bnav-item active" data-page="feed">
-      <span class="ni-icon">🏷</span>
-      <span class="ni-label">Feed</span>
-    </div>
-    <div class="bnav-item" data-page="map">
-      <span class="ni-icon">🗺</span>
-      <span class="ni-label">Map</span>
-    </div>
-    <div class="bnav-item" data-page="flash">
-      <span class="ni-icon">⚡</span>
-      <span class="ni-label">Flash</span>
-    </div>
-    <div class="bnav-item" data-page="bookmarks">
-      <span class="ni-icon">🔖</span>
-      <span class="ni-label">Saved</span>
-    </div>
-    <div class="bnav-item" data-page="notifications">
-      <div class="badge"></div>
-      <span class="ni-icon">🔔</span>
-      <span class="ni-label">Alerts</span>
-    </div>
-    <div class="bnav-item" data-page="settings">
-      <span class="ni-icon">⚙️</span>
-      <span class="ni-label">Settings</span>
     </div>
   </div>
-</nav>
 
-<!-- ── DEAL DETAIL MODAL ───────────────────────────────────── -->
-<div id="deal-modal" class="modal-overlay">
-  <div class="modal-box">
-    <div class="modal-head">
-      <div class="modal-head-title">Deal Details</div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button onclick="navigate('map')" style="background:var(--sur2);border:1px solid var(--border);border-radius:var(--r2);padding:6px 12px;color:var(--text);cursor:pointer;font-family:inherit;font-size:11px">🗺 View on Map</button>
-        <button onclick="closeDeal()" style="background:var(--sur2);border:1px solid var(--border);border-radius:var(--r2);padding:6px 12px;color:var(--text);cursor:pointer;font-family:inherit;font-size:12px">✕ Close</button>
-      </div>
-    </div>
-    <div class="modal-body">
-      <div class="modal-main" id="modal-main"></div>
-      <div class="modal-side" id="modal-side"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ── DEALS DATA (inline so no extra fetch needed) ─────────── -->
-<script>
-/* ── Deals array is populated here so pages can use it ── */
-const Deals = [
-  /* Add your real deals here.
-     Structure: { id, shop, emoji, cat, title, disc, dist, expiry,
-                  flash, rating, worthit, sightings, desc, lat, lng,
-                  saved, orig, price }
-     See js/deals.js for full documentation.
-
-     Example entries to show the UI — replace with real data: */
-  {
-    id: 1, shop: "Café Example", emoji: "☕", cat: "food",
-    title: "50% Off All Hot Beverages", disc: 50, dist: 0.2,
-    expiry: 7200, flash: true, rating: 4.8, worthit: 94,
-    sightings: 12,
-    desc: "All espresso drinks, filter coffee, and specialty teas at half price. Valid for dine-in only during morning hours.",
-    lat: 36, lng: 18, saved: false, orig: 600, price: 300
-  },
-  {
-    id: 2, shop: "TechCorner", emoji: "📱", cat: "electronics",
-    title: "Phone Accessory Bundle 3-for-1", disc: 66, dist: 0.45,
-    expiry: 28800, flash: false, rating: 4.5, worthit: 88,
-    sightings: 5,
-    desc: "Choose any 3 premium cases, chargers, or earbuds and pay for just one. All major phone brands covered.",
-    lat: 22, lng: 45, saved: false, orig: 3600, price: 1200
-  },
-  {
-    id: 3, shop: "Style Outlet", emoji: "👗", cat: "fashion",
-    title: "End of Season — 40% Off Everything", disc: 40, dist: 0.7,
-    expiry: 86400, flash: false, rating: 4.2, worthit: 81,
-    sightings: 23,
-    desc: "Full spring and summer collection marked down 40%. Sizes are going fast — in-store only.",
-    lat: 55, lng: 68, saved: false, orig: 8000, price: 4800
-  },
-  {
-    id: 4, shop: "Glow Studio", emoji: "💆", cat: "beauty",
-    title: "Facial + Massage Combo Deal", disc: 35, dist: 0.3,
-    expiry: 18000, flash: true, rating: 4.9, worthit: 97,
-    sightings: 8,
-    desc: "60-min deep-cleanse facial paired with a 30-min shoulder & neck massage by certified therapists. Book walk-in.",
-    lat: 40, lng: 72, saved: false, orig: 4500, price: 2925
-  },
-  {
-    id: 5, shop: "FitZone Gym", emoji: "🏋", cat: "sports",
-    title: "First Month Membership — 30% Off", disc: 30, dist: 0.9,
-    expiry: 172800, flash: false, rating: 4.3, worthit: 79,
-    sightings: 3,
-    desc: "Full facility access, unlimited group classes, and one free personal trainer session included.",
-    lat: 18, lng: 56, saved: false, orig: 6000, price: 4200
-  },
-  {
-    id: 6, shop: "HomeVibes", emoji: "🛋", cat: "home",
-    title: "Buy 2 Get 1 Free — Cushion Covers", disc: 33, dist: 0.5,
-    expiry: 43200, flash: false, rating: 4.0, worthit: 72,
-    sightings: 6,
-    desc: "Mix and match any cushion covers and throws from the full range. Great quality, limited time.",
-    lat: 64, lng: 34, saved: false, orig: 2400, price: 1600
-  },
-  {
-    id: 7, shop: "Burger Bros", emoji: "🍔", cat: "food",
-    title: "Double Burger Wednesday — BOGO", disc: 50, dist: 0.15,
-    expiry: 10800, flash: true, rating: 4.7, worthit: 92,
-    sightings: 31,
-    desc: "Every Wednesday buy one double smash burger and get a second free. Dine-in and takeaway.",
-    lat: 48, lng: 27, saved: false, orig: 1200, price: 600
-  },
-  {
-    id: 8, shop: "Luxury Timepieces", emoji: "⌚", cat: "electronics",
-    title: "Clearance Sale — Up to 60% Off", disc: 60, dist: 1.2,
-    expiry: 259200, flash: false, rating: 4.1, worthit: 76,
-    sightings: 4,
-    desc: "Premium watch brands clearing last-season inventory. Very limited pieces — visit in-store to see what's left.",
-    lat: 75, lng: 60, saved: false, orig: 45000, price: 18000
-  },
-  {
-    id: 9, shop: "Sushi Maru", emoji: "🍣", cat: "food",
-    title: "Lunch Set — 45% Off (12–3 PM)", disc: 45, dist: 0.6,
-    expiry: 5400, flash: true, rating: 4.6, worthit: 89,
-    sightings: 19,
-    desc: "Premium 8-piece sushi set with miso soup and house salad. Lunch hours only, no reservation needed.",
-    lat: 32, lng: 50, saved: false, orig: 2200, price: 1210
-  },
-  {
-    id: 10, shop: "Sole Street", emoji: "👟", cat: "fashion",
-    title: "Nike & Adidas — 25% Off This Weekend", disc: 25, dist: 0.8,
-    expiry: 129600, flash: false, rating: 4.4, worthit: 83,
-    sightings: 14,
-    desc: "Selected branded sports shoes on sale this weekend only. While stocks last — select styles only.",
-    lat: 60, lng: 75, saved: false, orig: 12000, price: 9000
-  },
-  {
-    id: 11, shop: "The Brew Lab", emoji: "🍺", cat: "food",
-    title: "Happy Hour: 2-for-1 Drinks (5–7 PM)", disc: 50, dist: 0.25,
-    expiry: 3600, flash: true, rating: 4.5, worthit: 91,
-    sightings: 22,
-    desc: "All draft drinks and mocktails on 2-for-1 every evening 5–7 PM. Bar seating only, first come first served.",
-    lat: 43, lng: 14, saved: false, orig: 900, price: 450
-  },
-  {
-    id: 12, shop: "EcoNest", emoji: "🪴", cat: "home",
-    title: "Indoor Plant Starter Bundle", disc: 20, dist: 1.0,
-    expiry: 345600, flash: false, rating: 3.9, worthit: 68,
-    sightings: 2,
-    desc: "6-plant beginner set with ceramic pots, soil, and care guide included. Perfect for home or office.",
-    lat: 14, lng: 80, saved: false, orig: 3500, price: 2800
-  },
-];
-</script>
-
-<!-- ── SCRIPTS ────────────────────────────────────────────────── -->
-<script src="js/app.js"></script>
-
+  <script src="app.js"></script>
 </body>
 </html>
