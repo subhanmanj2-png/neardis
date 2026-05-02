@@ -1,0 +1,456 @@
+<div class="page-enter" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+  <div class="topbar">
+    <div class="topbar-title">⚙️ Settings</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:220px 1fr;flex:1;overflow:hidden" id="settings-layout">
+
+    <!-- Settings nav sidebar -->
+    <div style="background:var(--bg2);border-right:1px solid var(--border);padding:16px;overflow-y:auto">
+      <div class="sec-head mb-8">Account</div>
+      <div id="stab-account"    class="stab active" onclick="setStab('account',this)">👤 Account & Login</div>
+      <div id="stab-profile"    class="stab" onclick="setStab('profile',this)">✏️ Edit Profile</div>
+      <div class="sec-head mb-8 mt-16">App</div>
+      <div id="stab-appearance" class="stab" onclick="setStab('appearance',this)">🎨 Appearance</div>
+      <div id="stab-location"   class="stab" onclick="setStab('location',this)">📍 Location & Radius</div>
+      <div id="stab-notifs"     class="stab" onclick="setStab('notifs',this)">🔔 Notifications</div>
+      <div class="sec-head mb-8 mt-16">More</div>
+      <div id="stab-privacy"    class="stab" onclick="setStab('privacy',this)">🔒 Privacy & Data</div>
+      <div id="stab-about"      class="stab" onclick="setStab('about',this)">ℹ️ About Neardis</div>
+    </div>
+
+    <!-- Settings content -->
+    <div class="scroll" style="padding:24px" id="settings-content"></div>
+
+  </div>
+</div>
+
+<style>
+.stab {
+  padding: 9px 12px;
+  border-radius: var(--r2);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text2);
+  margin-bottom: 3px;
+  transition: all 0.15s;
+}
+.stab:hover { background: var(--sur2); color: var(--text); }
+.stab.active { background: var(--sur3); color: var(--accent); }
+.settings-section { max-width: 520px; }
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 16px;
+}
+.settings-row-info { flex: 1; }
+.settings-row-label { font-size: 14px; font-weight: 500; }
+.settings-row-desc  { font-size: 11px; color: var(--text3); margin-top: 2px; }
+</style>
+
+<script>
+let activeStab = 'account';
+
+function init_settings() {
+  setStab(activeStab, document.getElementById('stab-' + activeStab));
+  if (window.innerWidth <= 768) {
+    const layout = document.getElementById('settings-layout');
+    if (layout) layout.style.gridTemplateColumns = '1fr';
+    const nav = layout?.firstElementChild;
+    if (nav) nav.style.display = 'none';
+  }
+}
+
+function setStab(tab, el) {
+  activeStab = tab;
+  document.querySelectorAll('.stab').forEach(s => s.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const c = document.getElementById('settings-content');
+  if (!c) return;
+
+  if (tab === 'account')     renderAccountSettings(c);
+  else if (tab === 'profile') renderProfileSettings(c);
+  else if (tab === 'appearance') renderAppearanceSettings(c);
+  else if (tab === 'location')   renderLocationSettings(c);
+  else if (tab === 'notifs')     renderNotifSettings(c);
+  else if (tab === 'privacy')    renderPrivacySettings(c);
+  else if (tab === 'about')      renderAboutSettings(c);
+}
+
+/* ── ACCOUNT ─────────────────────────────────────── */
+function renderAccountSettings(c) {
+  const user = App.user;
+  if (!user.loggedIn) {
+    c.innerHTML = `<div class="settings-section">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;margin-bottom:6px">Sign In</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:22px">Sign in to save deals, set route alerts, and sync your preferences across devices.</div>
+      <div class="stat-card mb-16">
+        <div style="font-weight:700;font-size:14px;margin-bottom:16px">Create Account / Sign In</div>
+        <div class="form-group"><label class="form-label">Your Name</label><input class="form-input" type="text" placeholder="Display name" id="login-name"></div>
+        <div class="form-group"><label class="form-label">Email Address</label><input class="form-input" type="email" placeholder="you@example.com" id="login-email"></div>
+        <div class="form-group"><label class="form-label">Password</label><input class="form-input" type="password" placeholder="Create a password" id="login-pass"></div>
+        <button class="btn btn-primary w-full mb-8" onclick="doLogin()">Sign In / Create Account</button>
+        <div style="font-size:10px;color:var(--text3);text-align:center">In a real app, this would use your auth backend (Firebase, Supabase, etc.)</div>
+      </div>
+    </div>`;
+  } else {
+    c.innerHTML = `<div class="settings-section">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;margin-bottom:20px">Account</div>
+      <div class="stat-card mb-16">
+        <div class="flex-center gap-14" style="gap:14px;margin-bottom:14px">
+          <div style="width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;color:#fff;letter-spacing:2px">${user.initials}</div>
+          <div>
+            <div style="font-size:16px;font-weight:700">${user.name}</div>
+            <div style="font-size:12px;color:var(--text2)">${user.email}</div>
+            <div class="verified mt-8" style="margin-top:4px">✓ Verified User</div>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Change Name</div>
+            <div class="settings-row-desc">Update how you appear to other users</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="changeName()">Edit</button>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="settings-row-label">Email</div>
+            <div class="settings-row-desc">${user.email}</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="alert('Email change requires re-authentication in a real app.')">Change</button>
+        </div>
+        <div class="settings-row" style="border:none">
+          <div class="settings-row-info">
+            <div class="settings-row-label" style="color:var(--accent)">Sign Out</div>
+            <div class="settings-row-desc">You can sign back in at any time</div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="doLogout()">Sign Out</button>
+        </div>
+      </div>
+    </div>`;
+  }
+}
+
+function doLogin() {
+  const name = document.getElementById('login-name').value.trim();
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  if (!name) { alert('Please enter your name.'); return; }
+  if (!email || !email.includes('@')) { alert('Please enter a valid email.'); return; }
+  if (!pass || pass.length < 6) { alert('Password must be at least 6 characters.'); return; }
+  loginUser(name, email);
+  renderAccountSettings(document.getElementById('settings-content'));
+  // Refresh profile badge
+  updateAvatarUI();
+  alert('Welcome to Neardis, ' + name + '! 🎉');
+}
+
+function doLogout() {
+  if (!confirm('Sign out of Neardis?')) return;
+  logoutUser();
+  renderAccountSettings(document.getElementById('settings-content'));
+}
+
+function changeName() {
+  const name = prompt('New display name:', App.user.name);
+  if (name && name.trim()) {
+    App.user.name = name.trim();
+    App.user.initials = name.trim().split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
+    App.saveState();
+    updateAvatarUI();
+    renderAccountSettings(document.getElementById('settings-content'));
+  }
+}
+
+/* ── PROFILE ─────────────────────────────────────── */
+function renderProfileSettings(c) {
+  if (!App.user.loggedIn) {
+    c.innerHTML = `<div class="settings-section"><div style="text-align:center;padding:40px;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">🔒</div><div style="font-size:14px">Sign in to edit your profile</div><button class="btn btn-primary mt-12" style="margin-top:12px" onclick="setStab('account',document.getElementById('stab-account'))">Sign In</button></div></div>`;
+    return;
+  }
+  const pd = JSON.parse(localStorage.getItem('nd-profile-extra') || '{}');
+  c.innerHTML = `<div class="settings-section">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;margin-bottom:20px">Edit Profile</div>
+    <div class="stat-card">
+      <div class="form-group"><label class="form-label">Display Name</label><input class="form-input" type="text" id="sp-name" value="${App.user.name||''}"></div>
+      <div class="form-group"><label class="form-label">Location / Area</label><input class="form-input" type="text" id="sp-loc" placeholder="e.g. Gulberg, Lahore" value="${pd.location||''}"></div>
+      <div class="form-group"><label class="form-label">Bio</label><textarea class="form-input" id="sp-bio" placeholder="Tell others about your deal-hunting style…">${pd.bio||''}</textarea></div>
+      <div class="form-group">
+        <label class="form-label">Interests</label>
+        <div class="chips">
+          ${['Food','Fashion','Tech','Beauty','Sports','Home'].map(cat =>
+            `<div class="chip${(pd.interests||[]).includes(cat)?' active':''}" onclick="this.classList.toggle('active')" data-int="${cat}">${cat}</div>`
+          ).join('')}
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveProfileSettings()">Save Profile</button>
+    </div>
+  </div>`;
+}
+
+function saveProfileSettings() {
+  const pd = JSON.parse(localStorage.getItem('nd-profile-extra') || '{}');
+  const name = document.getElementById('sp-name').value.trim();
+  if (name) { App.user.name = name; App.user.initials = name.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2); }
+  pd.location = document.getElementById('sp-loc').value.trim();
+  pd.bio = document.getElementById('sp-bio').value.trim();
+  pd.interests = [...document.querySelectorAll('[data-int].active')].map(el => el.dataset.int);
+  localStorage.setItem('nd-profile-extra', JSON.stringify(pd));
+  App.saveState(); updateAvatarUI();
+  alert('Profile saved!');
+}
+
+/* ── APPEARANCE ──────────────────────────────────── */
+function renderAppearanceSettings(c) {
+  c.innerHTML = `<div class="settings-section">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;margin-bottom:20px">Appearance</div>
+    <div class="stat-card">
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="settings-row-label">Dark Mode</div>
+          <div class="settings-row-desc">Switch between dark and light theme</div>
+        </div>
+        <div class="toggle" onclick="toggleTheme();this.querySelector('.t-track').classList.toggle('on')">
+          <div class="t-track${App.theme==='light'?' on':''}" id="theme-track"><div class="t-thumb"></div></div>
+          <span class="toggle-label" id="theme-label">${App.theme==='dark'?'Dark':'Light'}</span>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="settings-row-label">Flash Ticker</div>
+          <div class="settings-row-desc">Show the live flash deal ticker at the top</div>
+        </div>
+        <div class="toggle" onclick="toggleTicker(this)">
+          <div class="t-track on" id="ticker-track"><div class="t-thumb"></div></div>
+        </div>
+      </div>
+      <div class="settings-row" style="border:none">
+        <div class="settings-row-info">
+          <div class="settings-row-label">Compact Cards</div>
+          <div class="settings-row-desc">Show smaller deal cards in the feed</div>
+        </div>
+        <div class="toggle" onclick="this.querySelector('.t-track').classList.toggle('on')">
+          <div class="t-track"><div class="t-thumb"></div></div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:12px;font-size:11px;color:var(--text3)">Current theme: <strong style="color:var(--text)">${App.theme === 'dark' ? '🌙 Dark' : '☀️ Light'}</strong></div>
+  </div>`;
+
+  // Sync theme toggle label on switch
+  const orig = window.toggleTheme;
+  window.toggleTheme = function() {
+    orig();
+    const lbl = document.getElementById('theme-label');
+    if (lbl) lbl.textContent = App.theme === 'dark' ? 'Dark' : 'Light';
+  };
+}
+
+function toggleTicker(el) {
+  const ticker = document.getElementById('flash-ticker-bar');
+  const track = el.querySelector('.t-track');
+  const visible = ticker.style.display !== 'none';
+  ticker.style.display = visible ? 'none' : '';
+  track.classList.toggle('on', !visible);
+}
+
+/* ── LOCATION ─────────────────────────────────────── */
+function renderLocationSettings(c) {
+  const radius = localStorage.getItem('nd-radius') || '2';
+  c.innerHTML = `<div class="settings-section">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;margin-bottom:20px">Location & Radius</div>
+    <div class="stat-card mb-14">
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="settings-row-label">Use My Location</div>
+          <div class="settings-row-desc">Required for accurate deal distance sorting</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="requestLocation(this)">📍 Allow</button>
+      </div>
+      <div class="settings-row" style="border:none">
+        <div class="settings-row-info">
+          <div class="settings-row-label">Search Radius</div>
+          <div class="settings-row-desc">How far to search for deals</div>
+        </div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--accent)" id="radius-display">${radius}km</span>
+      </div>
+      <input type="range" min="0.5" max="10" step="0.5" value="${radius}" style="width:100%;accent-color:var(--accent);margin-top:8px"
+        oninput="document.getElementById('radius-display').textContent=this.value+'km';localStorage.setItem('nd-radius',this.value)">
+      <div class="flex-between mt-8" style="font-size:10px;color:var(--text3);margin-top:8px">
+        <span>500m</span><span>2km</span><span>5km</span><span>10km</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div style="font-weight:600;margin-bottom:12px">Manual Location</div>
+      <div class="form-group"><label class="form-label">Default City / Area</label><input class="form-input" type="text" placeholder="e.g. Gulberg, Lahore" id="manual-city" value="${localStorage.getItem('nd-manual-city')||''}"></div>
+      <button class="btn btn-ghost btn-sm" onclick="localStorage.setItem('nd-manual-city',document.getElementById('manual-city').value);alert('Location saved!')">Save Location</button>
+    </div>
+  </div>`;
+}
+
+function requestLocation(btn) {
+  if (!navigator.geolocation) { alert('Geolocation not supported by your browser.'); return; }
+  btn.textContent = '…';
+  navigator.geolocation.getCurrentPosition(
+    pos => { btn.textContent = '✓ Allowed'; btn.classList.remove('btn-primary'); btn.classList.add('btn-success'); localStorage.setItem('nd-geo', JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude })); },
+    () => { btn.textContent = '✗ Denied'; alert('Location permission denied. Please allow in browser settings.'); }
+  );
+}
+
+/* ── NOTIFICATIONS ───────────────────────────────── */
+function renderNotifSettings(c) {
+  const prefs = JSON.parse(localStorage.getItem('nd-notif-prefs') || 'null') || [
+    { l: 'Flash deals near me', d: 'Instant alert for ⚡ flash deals', on: true },
+    { l: 'Saved deals expiring', d: 'Reminder 1 hour before expiry', on: true },
+    { l: 'Deals along my route', d: 'When commuting past a deal', on: true },
+    { l: 'Community sightings', d: 'When users confirm a deal near you', on: false },
+    { l: 'New deals nearby', d: 'When new deals are posted in your area', on: true },
+    { l: 'Weekly digest', d: 'Sunday summary of top deals near you', on: false },
+  ];
+  c.innerHTML = `<div class="settings-section">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;margin-bottom:20px">Notifications</div>
+    <div class="stat-card mb-14">
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="settings-row-label">Push Notifications</div>
+          <div class="settings-row-desc">Allow Neardis to send you alerts</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="requestPushPerms(this)">Enable</button>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div style="font-weight:600;margin-bottom:14px">Alert Types</div>
+      ${prefs.map((p, i) => `
+        <div class="settings-row">
+          <div class="settings-row-info">
+            <div class="settings-row-label">${p.l}</div>
+            <div class="settings-row-desc">${p.d}</div>
+          </div>
+          <div class="toggle" onclick="toggleNPref(${i},this,${JSON.stringify(prefs)})">
+            <div class="t-track${p.on?' on':''}"><div class="t-thumb"></div></div>
+          </div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function toggleNPref(i, el, prefs) {
+  prefs[i].on = !prefs[i].on;
+  el.querySelector('.t-track').classList.toggle('on', prefs[i].on);
+  localStorage.setItem('nd-notif-prefs', JSON.stringify(prefs));
+}
+
+function requestPushPerms(btn) {
+  if (!('Notification' in window)) { alert('Notifications not supported.'); return; }
+  Notification.requestPermission().then(p => {
+    if (p === 'granted') { btn.textContent = '✓ Enabled'; btn.classList.remove('btn-primary'); btn.classList.add('btn-success'); }
+    else { btn.textContent = '✗ Blocked'; alert('Enable notifications in your browser settings.'); }
+  });
+}
+
+/* ── PRIVACY ──────────────────────────────────────── */
+function renderPrivacySettings(c) {
+  c.innerHTML = `<div class="settings-section">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;margin-bottom:20px">Privacy & Data</div>
+    <div class="stat-card mb-14">
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="settings-row-label">Anonymous Sightings</div>
+          <div class="settings-row-desc">Post sightings without showing your username</div>
+        </div>
+        <div class="toggle" onclick="this.querySelector('.t-track').classList.toggle('on')">
+          <div class="t-track on"><div class="t-thumb"></div></div>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-info">
+          <div class="settings-row-label">Location History</div>
+          <div class="settings-row-desc">Allow app to remember your location for better results</div>
+        </div>
+        <div class="toggle" onclick="this.querySelector('.t-track').classList.toggle('on')">
+          <div class="t-track on"><div class="t-thumb"></div></div>
+        </div>
+      </div>
+      <div class="settings-row" style="border:none">
+        <div class="settings-row-info">
+          <div class="settings-row-label">Usage Analytics</div>
+          <div class="settings-row-desc">Help improve Neardis with anonymous usage data</div>
+        </div>
+        <div class="toggle" onclick="this.querySelector('.t-track').classList.toggle('on')">
+          <div class="t-track on"><div class="t-thumb"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div style="font-weight:600;color:var(--accent);margin-bottom:14px">Danger Zone</div>
+      <button class="btn btn-danger w-full mb-8" onclick="clearAllData()">🗑 Clear All App Data</button>
+      <button class="btn btn-danger w-full" onclick="deleteAccount()">✕ Delete Account</button>
+    </div>
+  </div>`;
+}
+
+function clearAllData() {
+  if (!confirm('This will clear all your saved deals, routes, and preferences. Are you sure?')) return;
+  localStorage.clear();
+  App.savedDeals.clear();
+  App.viewedDeals = [];
+  alert('All data cleared. Refreshing…');
+  location.reload();
+}
+
+function deleteAccount() {
+  if (!confirm('Delete your account? This cannot be undone.')) return;
+  logoutUser(); localStorage.clear();
+  alert('Account deleted. You have been signed out.');
+  navigate('feed');
+}
+
+/* ── ABOUT ────────────────────────────────────────── */
+function renderAboutSettings(c) {
+  c.innerHTML = `<div class="settings-section">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;margin-bottom:20px">About Neardis</div>
+    <div class="stat-card mb-14" style="text-align:center;padding:28px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:6px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px">NEARDIS</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Hyperlocal Deal Discovery Platform</div>
+      <div style="font-size:11px;color:var(--text3)">Version 1.0.0</div>
+    </div>
+    <div class="stat-card mb-14">
+      <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:14px">
+        Neardis connects you with real discounts from verified local businesses around you. No algorithms, no ads — just genuine deals sorted by distance and freshness.
+      </div>
+      <div class="flex gap-8 flex-wrap">
+        <div style="font-size:12px;color:var(--green)">✓ Verified Shops Only</div>
+        <div style="font-size:12px;color:var(--blue)">✓ Real-time Expiry</div>
+        <div style="font-size:12px;color:var(--purple)">✓ Community-Verified</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="settings-row"><div class="settings-row-info"><div class="settings-row-label">Pages</div></div><span style="font-size:12px;color:var(--text3)">11</span></div>
+      <div class="settings-row"><div class="settings-row-info"><div class="settings-row-label">Framework</div></div><span style="font-size:12px;color:var(--text3)">Vanilla HTML/CSS/JS</span></div>
+      <div class="settings-row"><div class="settings-row-info"><div class="settings-row-label">Architecture</div></div><span style="font-size:12px;color:var(--text3)">Multi-file SPA</span></div>
+      <div class="settings-row"><div class="settings-row-info"><div class="settings-row-label">Storage</div></div><span style="font-size:12px;color:var(--text3)">localStorage</span></div>
+      <div class="settings-row" style="border:none"><div class="settings-row-info"><div class="settings-row-label">GitHub Compatible</div></div><span style="font-size:12px;color:var(--green)">✓ Yes</span></div>
+    </div>
+    <div class="stat-card mt-14" style="margin-top:14px">
+      <div style="font-weight:600;margin-bottom:10px">Keyboard Shortcuts</div>
+      ${[['F','Open Feed'],['M','Open Map'],['⚡','Flash Deals'],['S','Saved Deals'],['N','Notifications'],['?','Settings']].map(([k,v])=>`
+        <div class="flex-between" style="padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+          <span style="color:var(--text2)">${v}</span>
+          <kbd style="background:var(--sur3);border:1px solid var(--border2);border-radius:4px;padding:2px 7px;font-family:'JetBrains Mono',monospace;font-size:10px">${k}</kbd>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  const map = { f:'feed', m:'map', b:'bookmarks', n:'notifications', s:'settings' };
+  if (map[e.key.toLowerCase()]) navigate(map[e.key.toLowerCase()]);
+});
+
+init_settings();
+</script>
