@@ -1,0 +1,163 @@
+<div class="page-enter" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+  <div class="topbar">
+    <div class="topbar-title">✅ Shop Verification</div>
+    <span style="font-size:12px;color:var(--text2)">Get your business verified on Neardis</span>
+  </div>
+  <div class="scroll">
+    <div style="max-width:580px;margin:0 auto">
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:22px">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;margin-bottom:8px">Get Verified on Neardis</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:14px">Verified businesses get a trust badge, appear first in search results, and can post unlimited deals. The review process takes 2–3 business days.</div>
+        <div class="flex gap-12 flex-wrap">
+          <div class="flex-center gap-6" style="font-size:12px;color:var(--green)">✓ Trust Badge</div>
+          <div class="flex-center gap-6" style="font-size:12px;color:var(--blue)">✓ Priority Listing</div>
+          <div class="flex-center gap-6" style="font-size:12px;color:var(--purple)">✓ Unlimited Deals</div>
+          <div class="flex-center gap-6" style="font-size:12px;color:var(--amber)">✓ Analytics Access</div>
+        </div>
+      </div>
+
+      <!-- Step progress -->
+      <div class="step-progress" id="verify-steps"></div>
+
+      <!-- Step content -->
+      <div id="verify-content"></div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+let verifyStep = parseInt(localStorage.getItem('nd-verify-step') || '0');
+let verifyData = JSON.parse(localStorage.getItem('nd-verify-data') || '{}');
+
+function init_verify() { renderVerify(); }
+
+function renderVerify() {
+  const steps = ['Business Info', 'Address', 'Upload Docs', 'Complete'];
+  const stepsEl = document.getElementById('verify-steps');
+  if (stepsEl) {
+    stepsEl.innerHTML = steps.map((_, i) =>
+      `<div class="step-dot${i < verifyStep ? ' done' : i === verifyStep ? ' current' : ''}" title="${steps[i]}"></div>`
+    ).join('');
+  }
+
+  const c = document.getElementById('verify-content');
+  if (!c) return;
+
+  if (verifyStep === 0) {
+    c.innerHTML = `<div class="stat-card">
+      <div style="font-weight:700;font-size:15px;margin-bottom:18px">Step 1 of 3 — Business Information</div>
+      <div class="form-group"><label class="form-label">Business Name</label><input class="form-input" type="text" placeholder="Your shop or restaurant name" id="v-name" value="${verifyData.name||''}"></div>
+      <div class="form-group"><label class="form-label">Business Type</label>
+        <select class="form-input" id="v-type">
+          <option value="restaurant">🍔 Restaurant / Café</option>
+          <option value="retail">🛍 Retail Store</option>
+          <option value="beauty">💄 Beauty Salon / Spa</option>
+          <option value="gym">🏋 Gym / Sports</option>
+          <option value="electronics">📱 Electronics</option>
+          <option value="grocery">🛒 Grocery / Supermarket</option>
+          <option value="other">🏪 Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Owner / Manager Name</label><input class="form-input" type="text" placeholder="Full name" id="v-owner" value="${verifyData.owner||''}"></div>
+      <div class="form-group"><label class="form-label">Business Phone</label><input class="form-input" type="tel" placeholder="+92 300 0000000" id="v-phone" value="${verifyData.phone||''}"></div>
+      <div class="form-group"><label class="form-label">Business Email</label><input class="form-input" type="email" placeholder="business@example.com" id="v-email" value="${verifyData.email||''}"></div>
+      <button class="btn btn-primary" style="margin-top:4px" onclick="verifyNext(1)">Next: Address →</button>
+    </div>`;
+
+  } else if (verifyStep === 1) {
+    c.innerHTML = `<div class="stat-card">
+      <div style="font-weight:700;font-size:15px;margin-bottom:18px">Step 2 of 3 — Verify Address</div>
+      <div class="form-group"><label class="form-label">Street Address</label><input class="form-input" type="text" placeholder="Shop #, Street Name" id="v-street" value="${verifyData.street||''}"></div>
+      <div class="form-group"><label class="form-label">Area / Neighbourhood</label><input class="form-input" type="text" placeholder="e.g. Gulberg, DHA Phase 5" id="v-area" value="${verifyData.area||''}"></div>
+      <div class="form-group"><label class="form-label">City</label><input class="form-input" type="text" placeholder="e.g. Lahore" id="v-city" value="${verifyData.city||''}"></div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);height:150px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;cursor:pointer;flex-direction:column;gap:8px;color:var(--text3);transition:all 0.2s"
+        onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'"
+        onclick="alert('Map pin picker — integrate with Google Maps API')">
+        <div style="font-size:28px">📍</div>
+        <div style="font-size:12px">Tap to pin exact location on map</div>
+        <div style="font-size:10px">Required for deal geolocation</div>
+      </div>
+      <div class="flex gap-8">
+        <button class="btn btn-ghost" onclick="verifyBack()">← Back</button>
+        <button class="btn btn-primary" onclick="verifyNext(2)">Next: Documents →</button>
+      </div>
+    </div>`;
+
+  } else if (verifyStep === 2) {
+    c.innerHTML = `<div class="stat-card">
+      <div style="font-weight:700;font-size:15px;margin-bottom:18px">Step 3 of 3 — Upload Documents</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:16px">We verify every business to keep Neardis trustworthy for users.</div>
+      ${[
+        ['Business Registration', 'SECP / Trade License / FBR certificate', '📄'],
+        ['Owner ID / CNIC', 'National Identity Card — front and back', '🪪'],
+        ['Shop Photo', 'Clear exterior photo showing signage', '📷'],
+      ].map(([t, d, i]) => `
+        <div class="upload-zone mb-12" onclick="simulateUpload(this,'${t}')">
+          <div style="font-size:28px;margin-bottom:6px">${i}</div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:3px">${t}</div>
+          <div style="font-size:11px;color:var(--text3)">${d}</div>
+          <div style="font-size:10px;color:var(--accent);margin-top:6px">Click to upload</div>
+        </div>`).join('')}
+      <div class="flex gap-8 mt-8">
+        <button class="btn btn-ghost" onclick="verifyBack()">← Back</button>
+        <button class="btn btn-primary" onclick="verifyNext(3)">Submit for Review ✓</button>
+      </div>
+    </div>`;
+
+  } else {
+    c.innerHTML = `<div class="stat-card" style="text-align:center;padding:40px 24px">
+      <div style="font-size:64px;margin-bottom:16px">🎉</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;margin-bottom:10px">Application Submitted!</div>
+      <div style="font-size:13px;color:var(--text2);max-width:380px;margin:0 auto 20px;line-height:1.65">Our team will review your documents and verify your address within <strong style="color:var(--text)">2–3 business days</strong>. You'll receive an email once approved.</div>
+      <div class="verified" style="font-size:13px;justify-content:center;margin-bottom:20px">✓ Verification Pending Review</div>
+      <div class="flex gap-8" style="justify-content:center">
+        <button class="btn btn-ghost" onclick="verifyStep=0;localStorage.removeItem('nd-verify-step');renderVerify()">Start Over</button>
+        <button class="btn btn-primary" onclick="navigate('business')">Go to Dashboard</button>
+      </div>
+    </div>`;
+    localStorage.removeItem('nd-verify-step');
+    localStorage.removeItem('nd-verify-data');
+  }
+}
+
+function saveVerifyData() {
+  const fields = { name:'v-name', owner:'v-owner', phone:'v-phone', email:'v-email', street:'v-street', area:'v-area', city:'v-city' };
+  Object.entries(fields).forEach(([k, id]) => {
+    const el = document.getElementById(id);
+    if (el) verifyData[k] = el.value;
+  });
+  localStorage.setItem('nd-verify-data', JSON.stringify(verifyData));
+}
+
+function verifyNext(step) {
+  if (step === 1) {
+    const name = document.getElementById('v-name')?.value.trim();
+    if (!name) { alert('Please enter your business name.'); return; }
+  }
+  if (step === 2) {
+    const street = document.getElementById('v-street')?.value.trim();
+    if (!street) { alert('Please enter your street address.'); return; }
+  }
+  saveVerifyData();
+  verifyStep = step;
+  localStorage.setItem('nd-verify-step', step);
+  renderVerify();
+}
+
+function verifyBack() {
+  verifyStep = Math.max(0, verifyStep - 1);
+  localStorage.setItem('nd-verify-step', verifyStep);
+  renderVerify();
+}
+
+function simulateUpload(el, name) {
+  el.style.borderColor = 'var(--green)';
+  el.style.background = 'rgba(34,197,94,0.06)';
+  el.querySelector('[style*="color:var(--accent)"]').textContent = '✓ ' + name + ' uploaded';
+  el.querySelector('[style*="color:var(--accent)"]').style.color = 'var(--green)';
+}
+
+init_verify();
+</script>
